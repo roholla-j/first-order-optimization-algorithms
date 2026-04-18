@@ -26,7 +26,7 @@ def run(optimizers: dict, X, y, config: dict) -> dict:
     """
     rng      = np.random.default_rng(config.get("w0_seed", 0))
     w0       = rng.standard_normal(X.shape[1]) * 0.01
-    epsilons = config.get("epsilons", [0.5, 0.35, 0.1])
+    epsilons = config.get("epsilons", [0.5, 0.35, 0.01])
     results  = {}
 
     for name, (opt_fn, opt_kwargs) in optimizers.items():

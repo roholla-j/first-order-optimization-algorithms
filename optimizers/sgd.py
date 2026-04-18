@@ -32,11 +32,7 @@ def sgd(start_w, x, y,
     n = len(x) if hasattr(x, '__len__') and not isinstance(x, (float, int)) else 1
     
     for step in range(steps):
-        # Compute and record full loss (for visualization)
-        # current_loss = loss_func(w, x, y)
-        # loss_history.append(current_loss)
-        if step %  10 == 0:
-            loss_history.append(loss_func(w, x, y))
+        loss_history.append(loss_func(w, x, y))
         # Sample a mini-batch (true SGD behavior)
         if n > 1:
             indices = np.random.choice(n, batch_size, replace=False)

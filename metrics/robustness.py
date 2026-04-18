@@ -116,24 +116,25 @@ def run(optimizers: dict, X, y, config: dict) -> dict:
 
 
 def summarize(results: dict) -> None:
-    # Init robustness table
-    print(f"\n--- Init robustness ({list(results.values())[0]['init']['mean'].__class__.__name__}) ---")
-    print(f"\n{'Optimizer':<14} {'Mean':>10} {'Std':>8} {'Worst':>10}")
-    print("-" * 44)
+    print(f"\n--- Init robustness ---")
+    print(f"\n{'Optimizer':<14} {'Mean':>10} {'Std':>8} {'Worst':>10} {'SuccessRate':>12}")
+    print("-" * 58)
     for name, d in results.items():
         i = d["init"]
         mean  = f"{i['mean']:.4f}"  if i['mean']  is not None else "None"
         std   = f"{i['std']:.4f}"   if i['std']   is not None else "None"
         worst = f"{i['worst']:.4f}" if i['worst'] is not None else "None"
+        rate  = f"{i['success_rate']:.2f}"
+        print(f"{name:<14} {mean:>10} {std:>8} {worst:>10} {rate:>12}")
 
-        print(f"{name:<14} {mean:>10} {std:>8} {worst:>10}")
-
-    # Noise robustness table
     noise_levels = list(list(results.values())[0]["noise"].keys())
     headers      = "".join(f"  noise={s}" for s in noise_levels)
     print(f"\n--- Noise robustness ---")
     print(f"\n{'Optimizer':<14}{headers}")
     print("-" * (14 + 10 * len(noise_levels)))
     for name, d in results.items():
-        row = "".join(f"  {d['noise'][s]:>8.4f}" for s in noise_levels)
+        row = "".join(
+            f"  {'NaN':>8}" if d["noise"][s] is None else f"  {d['noise'][s]:>8.4f}"
+            for s in noise_levels
+        )
         print(f"{name:<14}{row}")

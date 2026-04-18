@@ -22,7 +22,7 @@ def load_libsvm(path: str):
 
 def load_data(path: str):
     X, y = load_libsvm(path)
-    y = np.where(y > 0, -1, 1)
+    y = np.where(y > 0, 1, -1)
     X = add_bias(X)
     return X, y
 
