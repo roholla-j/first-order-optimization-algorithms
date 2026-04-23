@@ -11,69 +11,6 @@ def _setup_ax(ax, title, xlabel, ylabel):
     ax.grid(True, alpha=0.3)
 
 
-# ── Convergence ───────────────────────────────────────────────────────────────
-
-def plot_loss_curves(results: dict, title="Loss curves", log_scale=True, save_path=None):
-    fig, ax = plt.subplots(figsize=(9, 5))
-    for i, (name, data) in enumerate(results.items()):
-        ax.plot(data["losses"], label=name, linewidth=1.8, color=COLORS[i % len(COLORS)])
-    if log_scale:
-        ax.set_yscale("log")
-    _setup_ax(ax, title, "Iteration", "Loss")
-    ax.legend(framealpha=0.9)
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-    plt.show()
-
-
-def plot_convergence_dashboard(results: dict, title="Convergence", save_path=None):
-    """Loss curves (log scale) + AUC bar chart side by side."""
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-    ax = axes[0]
-    for i, (name, data) in enumerate(results.items()):
-        losses = data["losses"]
-        if losses:
-            ax.semilogy(losses, label=name, linewidth=1.8, color=COLORS[i % len(COLORS)])
-    _setup_ax(ax, "Loss curves (log scale)", "Iteration", "Loss")
-    ax.legend(framealpha=0.9)
-
-    ax = axes[1]
-    names = [n for n, d in results.items() if d.get("auc") is not None]
-    aucs  = [results[n]["auc"] for n in names]
-    bars  = ax.bar(names, aucs,
-                   color=[COLORS[i % len(COLORS)] for i in range(len(names))],
-                   edgecolor="white", linewidth=0.8)
-    ax.bar_label(bars, fmt="%.4f", padding=3, fontsize=9)
-    _setup_ax(ax, "Area Under Loss Curve\n(lower = faster convergence)", "Optimizer", "AUC")
-    ax.tick_params(axis="x", rotation=15)
-
-    plt.suptitle(title, fontsize=13, fontweight="bold")
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-    plt.show()
-
-
-def plot_convergence_separate(results: dict, save_path=None):
-    """One subplot per optimizer (log scale)."""
-    names = list(results.keys())
-    n     = len(names)
-    fig, axes = plt.subplots(n, 1, figsize=(9, 4 * n), sharex=True)
-    if n == 1:
-        axes = [axes]
-    for i, (ax, name) in enumerate(zip(axes, names)):
-        ax.semilogy(results[name]["losses"], color=COLORS[i % len(COLORS)], linewidth=1.8)
-        _setup_ax(ax, name, "", "Loss")
-    axes[-1].set_xlabel("Iteration")
-    plt.suptitle("Convergence — per optimizer", fontsize=13, fontweight="bold")
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-    plt.show()
-
-
 # ── Robustness ────────────────────────────────────────────────────────────────
 
 def plot_robustness_boxplot(results: dict, title="Init robustness", save_path=None):
