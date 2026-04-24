@@ -39,6 +39,12 @@ def run(opt_fn, fixed_kwargs, sweep_param, sweep_vals, X, y, config):
     """
     rng  = np.random.default_rng(config.get("w0_seed", 0))
     w0   = rng.standard_normal(X.shape[1]) if X is not None else config.get("w0")
+    # if config.get("w0") is not None:
+    #     w0 = config["w0"].copy()
+    # else:
+    #     rng = np.random.default_rng(config.get("w0_seed", 0))
+    #     # Fallback to random initialization for classification datasets
+    #     w0 = rng.standard_normal(X.shape[1])
     n_iters       = config["n_iters"]
     loss_func     = config["loss_func"]
     gradient_func = config["gradient_func"]

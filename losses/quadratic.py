@@ -5,3 +5,6 @@ def quadratic_loss(w, A, b):
 
 def quadratic_gradient(w, A, b):
     return 2 * (A @ w) - 2 * b
+
+
+

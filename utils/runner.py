@@ -44,5 +44,3 @@ class OptimizerRunner:
             "path": path,
             "grad_norms": grad_norms,
         }
-
-
