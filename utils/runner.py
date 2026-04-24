@@ -25,7 +25,7 @@ class OptimizerRunner:
         self.grad_fn    = grad_fn
 
     def run(self, X, y, w0: np.ndarray, n_iters: int) -> dict:
-        final_w, losses, _ = self.opt_fn(
+        final_w, losses, path = self.opt_fn(
             start_w=w0,
             x=X,
             y=y,
@@ -34,6 +34,13 @@ class OptimizerRunner:
             steps=n_iters,
             **self.opt_kwargs,
         )
-        return {"w": final_w, "losses": losses, "final_loss": losses[-1]}
-
-
+        grad_norms = [
+            float(np.linalg.norm(self.grad_fn(w, X, y))) for w in path[:-1]
+        ]
+        return {
+            "w": final_w,
+            "losses": losses,
+            "final_loss": losses[-1],
+            "path": path,
+            "grad_norms": grad_norms,
+        }

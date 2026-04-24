@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -11,67 +12,25 @@ def _setup_ax(ax, title, xlabel, ylabel):
     ax.grid(True, alpha=0.3)
 
 
-# ── Convergence ───────────────────────────────────────────────────────────────
+def make_axes_grid(n_plots, w_per_plot=9, h_per_row=6, max_cols=2):
+    """
+    Create a figure with *n_plots* subplots arranged in a grid with at most
+    *max_cols* columns.  Any unused grid cells are hidden.
 
-def plot_loss_curves(results: dict, title="Loss curves", log_scale=True, save_path=None):
-    fig, ax = plt.subplots(figsize=(9, 5))
-    for i, (name, data) in enumerate(results.items()):
-        ax.plot(data["losses"], label=name, linewidth=1.8, color=COLORS[i % len(COLORS)])
-    if log_scale:
-        ax.set_yscale("log")
-    _setup_ax(ax, title, "Iteration", "Loss")
-    ax.legend(framealpha=0.9)
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-    plt.show()
-
-
-def plot_convergence_dashboard(results: dict, title="Convergence", save_path=None):
-    """Loss curves (log scale) + AUC bar chart side by side."""
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-    ax = axes[0]
-    for i, (name, data) in enumerate(results.items()):
-        losses = data["losses"]
-        if losses:
-            ax.semilogy(losses, label=name, linewidth=1.8, color=COLORS[i % len(COLORS)])
-    _setup_ax(ax, "Loss curves (log scale)", "Iteration", "Loss")
-    ax.legend(framealpha=0.9)
-
-    ax = axes[1]
-    names = [n for n, d in results.items() if d.get("auc") is not None]
-    aucs  = [results[n]["auc"] for n in names]
-    bars  = ax.bar(names, aucs,
-                   color=[COLORS[i % len(COLORS)] for i in range(len(names))],
-                   edgecolor="white", linewidth=0.8)
-    ax.bar_label(bars, fmt="%.4f", padding=3, fontsize=9)
-    _setup_ax(ax, "Area Under Loss Curve\n(lower = faster convergence)", "Optimizer", "AUC")
-    ax.tick_params(axis="x", rotation=15)
-
-    plt.suptitle(title, fontsize=13, fontweight="bold")
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-    plt.show()
-
-
-def plot_convergence_separate(results: dict, save_path=None):
-    """One subplot per optimizer (log scale)."""
-    names = list(results.keys())
-    n     = len(names)
-    fig, axes = plt.subplots(n, 1, figsize=(9, 4 * n), sharex=True)
-    if n == 1:
-        axes = [axes]
-    for i, (ax, name) in enumerate(zip(axes, names)):
-        ax.semilogy(results[name]["losses"], color=COLORS[i % len(COLORS)], linewidth=1.8)
-        _setup_ax(ax, name, "", "Loss")
-    axes[-1].set_xlabel("Iteration")
-    plt.suptitle("Convergence — per optimizer", fontsize=13, fontweight="bold")
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-    plt.show()
+    Returns
+    -------
+    fig, axes_flat : Figure and a flat list of *n_plots* Axes (ready to index)
+    """
+    ncols = min(n_plots, max_cols)
+    nrows = math.ceil(n_plots / ncols)
+    fig, axes = plt.subplots(nrows, ncols,
+                             figsize=(w_per_plot * ncols, h_per_row * nrows),
+                             squeeze=False)
+    axes_flat = axes.flatten()
+    # Hide any extra cells
+    for ax in axes_flat[n_plots:]:
+        ax.set_visible(False)
+    return fig, list(axes_flat[:n_plots])
 
 
 # ── Robustness ────────────────────────────────────────────────────────────────
@@ -153,12 +112,17 @@ def plot_robustness_dashboard(results: dict, title="Robustness", save_path=None)
 
 def plot_sensitivity_heatmap(grid, row_vals, col_vals,
                               row_label="lr", col_label="beta",
-                              title="Sensitivity", save_path=None):
+                              title="Sensitivity", save_path=None, ax=None):
     """
     2D heatmap with explicit tick labels — handles non-linear (log) spacing correctly.
     Annotates each cell when the grid is small enough to read.
     """
-    fig, ax = plt.subplots(figsize=(8, 6))
+    if ax is None:
+        fig, ax_to_plot = plt.subplots(figsize=(8, 6))
+        show = True
+    else:
+        ax_to_plot = ax
+        show = False
 
     display_grid = grid.copy()
     finite = display_grid[np.isfinite(display_grid)]
@@ -169,17 +133,17 @@ def plot_sensitivity_heatmap(grid, row_vals, col_vals,
     else:
         vmin, vmax = 0.0, 1.0
 
-    im = ax.imshow(display_grid, aspect="auto", origin="lower", cmap="viridis_r",
+    im = ax_to_plot.imshow(display_grid, aspect="auto", origin="lower", cmap="viridis_r",
                    vmin=vmin, vmax=vmax)
-    plt.colorbar(im, ax=ax, label="Final loss  (lower = better)")
+    plt.colorbar(im, ax=ax_to_plot, label="Final loss  (lower = better)")
 
-    ax.set_xticks(range(len(col_vals)))
-    ax.set_xticklabels([f"{v:.3g}" for v in col_vals], rotation=45, ha="right")
-    ax.set_yticks(range(len(row_vals)))
-    ax.set_yticklabels([f"{v:.3g}" for v in row_vals])
-    ax.set_xlabel(col_label)
-    ax.set_ylabel(row_label)
-    ax.set_title(title, fontsize=11, fontweight="bold")
+    ax_to_plot.set_xticks(range(len(col_vals)))
+    ax_to_plot.set_xticklabels([f"{v:.3g}" for v in col_vals], rotation=45, ha="right")
+    ax_to_plot.set_yticks(range(len(row_vals)))
+    ax_to_plot.set_yticklabels([f"{v:.3g}" for v in row_vals])
+    ax_to_plot.set_xlabel(col_label)
+    ax_to_plot.set_ylabel(row_label)
+    ax_to_plot.set_title(title, fontsize=11, fontweight="bold")
 
     if grid.size <= 60 and len(finite) > 0:
         mid = (vmin + vmax) / 2
@@ -188,13 +152,14 @@ def plot_sensitivity_heatmap(grid, row_vals, col_vals,
                 val = grid[i, j]
                 if np.isfinite(val):
                     txt_color = "white" if display_grid[i, j] > mid else "black"
-                    ax.text(j, i, f"{val:.3f}", ha="center", va="center",
+                    ax_to_plot.text(j, i, f"{val:.3f}", ha="center", va="center",
                             fontsize=7, color=txt_color)
 
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-    plt.show()
+    if show:
+        plt.tight_layout()
+        if save_path:
+            plt.savefig(save_path, dpi=150)
+        plt.show()
 
 
 def plot_sensitivity_line(results: dict, param_name="lr",
@@ -222,31 +187,86 @@ def plot_sensitivity_line(results: dict, param_name="lr",
 
 # ── Rosenbrock ────────────────────────────────────────────────────────────────
 
-def plot_rosenbrock_paths(paths: dict, title="Rosenbrock trajectories", save_path=None):
+def plot_rosenbrock_paths(paths: dict, title="Rosenbrock trajectories", save_path=None, ax=None):
     x1 = np.linspace(-2, 2, 400)
     x2 = np.linspace(-1, 3, 400)
     X1, X2 = np.meshgrid(x1, x2)
     Z = 100 * (X2 - X1 ** 2) ** 2 + (1 - X1) ** 2
 
-    fig, ax = plt.subplots(figsize=(9, 7))
-    ax.contour(X1, X2, np.log1p(Z), levels=30, cmap="gray", alpha=0.5)
+    if ax is None:
+        fig, ax_to_plot = plt.subplots(figsize=(9, 7))
+        show = True
+    else:
+        ax_to_plot = ax
+        show = False
+
+    ax_to_plot.contour(X1, X2, np.log1p(Z), levels=30, cmap="gray", alpha=0.5)
 
     for i, (name, path) in enumerate(paths.items()):
         color = COLORS[i % len(COLORS)]
-        ax.plot(path[:, 0], path[:, 1], marker=".", markersize=3,
+        ax_to_plot.plot(path[:, 0], path[:, 1], marker=".", markersize=3,
                 label=name, color=color, alpha=0.8)
-        ax.plot(*path[0],  "o", markersize=7,  color=color, markeredgecolor="black")
-        ax.plot(*path[-1], "*", markersize=11, color=color, markeredgecolor="black")
+        ax_to_plot.plot(*path[0],  "o", markersize=7,  color=color, markeredgecolor="black")
+        ax_to_plot.plot(*path[-1], "*", markersize=11, color=color, markeredgecolor="black")
 
-    ax.plot(1, 1, "r*", markersize=15, label="optimum (1,1)", zorder=5)
-    ax.set_xlabel("x₁")
-    ax.set_ylabel("x₂")
-    ax.set_title(title, fontsize=11, fontweight="bold")
-    ax.legend(framealpha=0.9)
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-    plt.show()
+    ax_to_plot.plot(1, 1, "r*", markersize=15, label="optimum (1,1)", zorder=5)
+    ax_to_plot.set_xlabel("x₁")
+    ax_to_plot.set_ylabel("x₂")
+    ax_to_plot.set_title(title, fontsize=11, fontweight="bold")
+    ax_to_plot.legend(framealpha=0.9)
+    if show:
+        plt.tight_layout()
+        if save_path:
+            plt.savefig(save_path, dpi=150)
+        plt.show()
+
+def plot_quadratic_paths(paths: dict, A, b, title="Quadratic Bowl trajectories", save_path=None, ax=None):
+    from losses.quadratic import quadratic_loss
+    # Calculate the optimum
+    w_star = np.linalg.inv(A) @ b
+
+    # We want to make sure the meshgrid covers both the start points and the optimum
+    all_points = np.vstack([p for p in paths.values()] + [w_star])
+    x1_min, x1_max = all_points[:, 0].min(), all_points[:, 0].max()
+    x2_min, x2_max = all_points[:, 1].min(), all_points[:, 1].max()
+
+    # Add some padding
+    padding_x1 = max(0.5, (x1_max - x1_min) * 0.2)
+    padding_x2 = max(0.5, (x2_max - x2_min) * 0.2)
+
+    x1 = np.linspace(x1_min - padding_x1, x1_max + padding_x1, 200)
+    x2 = np.linspace(x2_min - padding_x2, x2_max + padding_x2, 200)
+    X1, X2 = np.meshgrid(x1, x2)
+
+    pts = np.stack([X1.ravel(), X2.ravel()], axis=1)
+    Z = np.array([quadratic_loss(p, A, b) for p in pts]).reshape(X1.shape)
+
+    if ax is None:
+        fig, ax_to_plot = plt.subplots(figsize=(9, 7))
+        show = True
+    else:
+        ax_to_plot = ax
+        show = False
+
+    ax_to_plot.contour(X1, X2, Z, levels=25, cmap="viridis", alpha=0.5)
+
+    for i, (name, path) in enumerate(paths.items()):
+        color = COLORS[i % len(COLORS)]
+        ax_to_plot.plot(path[:, 0], path[:, 1], marker=".", markersize=3,
+                label=name, color=color, alpha=0.8)
+        ax_to_plot.plot(*path[0],  "o", markersize=7,  color=color, markeredgecolor="black")
+        ax_to_plot.plot(*path[-1], "*", markersize=11, color=color, markeredgecolor="black")
+
+    ax_to_plot.plot(*w_star, "r*", markersize=15, label="optimum (w*)", zorder=5)
+    ax_to_plot.set_xlabel("w₁")
+    ax_to_plot.set_ylabel("w₂")
+    ax_to_plot.set_title(title, fontsize=11, fontweight="bold")
+    ax_to_plot.legend(framealpha=0.9)
+    if show:
+        plt.tight_layout()
+        if save_path:
+            plt.savefig(save_path, dpi=150)
+        plt.show()
 
 
 def plot_distance_to_optimum(distances: dict, title="Distance to optimum", save_path=None):

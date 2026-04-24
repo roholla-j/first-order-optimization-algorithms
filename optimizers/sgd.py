@@ -29,7 +29,12 @@ def sgd(start_w, x, y,
     loss_history = []
     path_history = [w.copy()]
     
-    n = len(x) if hasattr(x, '__len__') and not isinstance(x, (float, int)) else 1
+    if hasattr(x, 'shape'):
+        n = x.shape[0]
+    elif hasattr(x, '__len__') and not isinstance(x, (float, int)):
+        n = len(x)
+    else:
+        n = 1
     
     for step in range(steps):
         loss_history.append(loss_func(w, x, y))
