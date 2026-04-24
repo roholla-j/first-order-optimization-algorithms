@@ -37,8 +37,14 @@ def run(opt_fn, fixed_kwargs, sweep_param, sweep_vals, X, y, config):
     -------
     {val: {"losses": list, "path": np.ndarray}}
     """
-    rng  = np.random.default_rng(config.get("w0_seed", 0))
-    w0   = rng.standard_normal(X.shape[1]) if X is not None else config.get("w0")
+    # Fix: Always prioritize config['w0'] if it's explicitly provided
+    if config.get("w0") is not None:
+        w0 = config["w0"].copy()
+    else:
+        rng = np.random.default_rng(config.get("w0_seed", 0))
+        # Fallback to random initialization for classification datasets
+        w0 = rng.standard_normal(X.shape[1])
+
     n_iters       = config["n_iters"]
     loss_func     = config["loss_func"]
     gradient_func = config["gradient_func"]
@@ -61,16 +67,7 @@ def run(opt_fn, fixed_kwargs, sweep_param, sweep_vals, X, y, config):
 
 
 def plot(results, sweep_param, fixed_desc, title="", ax=None):
-    """
-    Parameters
-    ----------
-    results     : return value of run()
-    sweep_param : name of the swept parameter (used in legend labels)
-    fixed_desc  : human-readable string of the fixed values,
-                  e.g. "beta=0.9"  or  "lr=0.1, beta2=0.999"
-    title       : plot title
-    ax          : matplotlib Axes to draw on; if None a new figure is created
-    """
+    """Line plot of loss history (Linear Scale)."""
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     show   = ax is None
     if show:
