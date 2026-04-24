@@ -67,7 +67,7 @@ def main():
             loss_func, gradient_func = rosenbrock, rosenbrock_gradient
             w0 = np.array([-1.0, 1.0])
             title_prefix = "Rosenbrock"
-            n_iters = 2000
+            n_iters = 4000
         elif dataset_choice == "4":
             loss_func, gradient_func = quadratic_loss, quadratic_gradient
             w0 = np.array([3.0, 4.0])

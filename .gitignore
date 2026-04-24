@@ -1,3 +1,19 @@
+# Python
+__pycache__/
 *.pyc
-.vscode/settings.json
-data/rcv1_train.binary
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# macOS
+.DS_Store
+
+# Data files (large binaries)
+*.binary
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
