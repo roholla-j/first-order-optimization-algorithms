@@ -17,3 +17,8 @@ env/
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
+*.pyc
+/losses/__pycache__
+/losses/__pycache__
+*.pyc
+*.pyc
