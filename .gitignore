@@ -17,3 +17,4 @@ env/
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
+.vscode/settings.json
