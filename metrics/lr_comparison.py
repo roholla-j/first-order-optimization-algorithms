@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from losses.logistic import logistic_loss, logistic_gradient
+from tqdm import tqdm
 
 # Linestyles cycled across learning rates so algorithms (colors) and
 # learning rates (linestyles) remain visually separable on one graph.
@@ -36,31 +37,33 @@ def run(optimizers: dict, X, y, config: dict) -> dict:
     — same inner structure for every algorithm, one entry per lr.
     """
     rng            = np.random.default_rng(config.get("w0_seed", 0))
-    w0             = rng.standard_normal(X.shape[1])
+    w0             = rng.standard_normal(X.shape[1]) if X is not None else config.get("w0")
     learning_rates = config["learning_rates"]
     n_iters        = config["n_iters"]
+    loss_func      = config.get("loss_func", logistic_loss)
+    gradient_func  = config.get("gradient_func", logistic_gradient)
     results        = {}
 
     for name, (opt_fn, opt_kwargs) in optimizers.items():
         lr_results = {}
-        for lr in learning_rates:
-            _, losses, _ = opt_fn(
+        for lr in tqdm(learning_rates, desc=f"{name} LR sweep", leave=False):
+            _, losses, path = opt_fn(
                 start_w=w0,
                 x=X,
                 y=y,
-                loss_func=logistic_loss,
-                gradient_func=logistic_gradient,
+                loss_func=loss_func,
+                gradient_func=gradient_func,
                 lr=lr,
                 steps=n_iters,
                 **opt_kwargs,
             )
-            lr_results[lr] = {"losses": losses}
+            lr_results[lr] = {"losses": losses, "path": path}
         results[name] = lr_results
 
     return results
 
 
-def plot(results: dict, title="Learning Rate Comparison", save_path=None):
+def plot(results: dict, title="Learning Rate Comparison", save_path=None, ax=None):
     """
     Parameters
     ----------
@@ -72,24 +75,34 @@ def plot(results: dict, title="Learning Rate Comparison", save_path=None):
     Learning rates are distinguished by color; algorithms by linestyle.
     """
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    fig, ax = plt.subplots(figsize=(10, 5))
+    if ax is None:
+        fig, ax_to_plot = plt.subplots(figsize=(10, 5))
+        show = True
+    else:
+        ax_to_plot = ax
+        show = False
 
     for i, (name, lr_dict) in enumerate(results.items()):
         ls = _LINESTYLES[i % len(_LINESTYLES)]
         for j, (lr, data) in enumerate(lr_dict.items()):
             color = colors[j % len(colors)]
-            label = f"{name}  lr={lr}" if len(results) > 1 else f"lr = {lr}"
-            ax.plot(data["losses"], label=label,
+            base_label = f"{name}  lr={lr}" if len(results) > 1 else f"lr = {lr}"
+            losses = data['losses']
+            finite = [v for v in losses if np.isfinite(v)]
+            final_str = f"{finite[-1]:.4g}" if finite else "diverged"
+            label = f"{base_label} (Final: {final_str})"
+            ax_to_plot.plot(losses, label=label,
                     linewidth=1.8, color=color, linestyle=ls)
 
-    ax.set_xlabel("Epoch", fontsize=12)
-    ax.set_ylabel("Logistic Loss", fontsize=12)
-    ax.set_title(title, fontsize=12, fontweight="bold")
+    ax_to_plot.set_xlabel("Epoch / Iteration", fontsize=12)
+    ax_to_plot.set_ylabel("Loss", fontsize=12)
+    ax_to_plot.set_title(title, fontsize=12, fontweight="bold")
     legend_title = "Algorithm  ·  learning rate" if len(results) > 1 else "Learning rate"
-    ax.legend(title=legend_title, framealpha=0.9, fontsize=9)
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-    plt.show()
+    ax_to_plot.legend(title=legend_title, framealpha=0.9, fontsize=9)
+    ax_to_plot.grid(True, alpha=0.3)
+    
+    if show:
+        plt.tight_layout()
+        if save_path:
+            plt.savefig(save_path, dpi=150)
+        plt.show()

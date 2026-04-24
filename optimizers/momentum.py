@@ -28,12 +28,23 @@ def momentum(start_w, x, y,
     path_history = [w.copy()]
 
     for _ in range(steps):
+        # Divergence guard: pad with NaN so diverged runs end cleanly in plots
+        if not np.all(np.isfinite(w)):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
+
         # Compute and record loss
         current_loss = loss_func(w, x, y)
+        if not np.isfinite(current_loss):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
         loss_history.append(current_loss)
 
         # Compute gradient
         grad = gradient_func(w, x, y)
+        if not np.all(np.isfinite(grad)):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
 
         # Update velocity and weights
         v = beta * v + grad

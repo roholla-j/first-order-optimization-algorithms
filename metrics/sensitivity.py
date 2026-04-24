@@ -9,6 +9,7 @@ Sweeps one or two hyperparameters for each optimizer and reports:
                         (std / mean) — higher means more sensitive
 """
 import numpy as np
+from tqdm import tqdm
 from utils.runner import OptimizerRunner
 
 
@@ -32,35 +33,43 @@ def run(optimizers: dict, X, y, config: dict) -> dict:
     p2_vals    = param_grid[p2_name] if p2_name else [None]
 
     rng     = np.random.default_rng(config.get("w0_seed", 0))
-    w0      = rng.standard_normal(X.shape[1]) * 0.01
+    w0      = rng.standard_normal(X.shape[1]) * 0.01 if X is not None else config.get("w0")
     results = {}
 
     for name, (opt_fn, base_kwargs) in optimizers.items():
         grid      = np.full((len(p1_vals), len(p2_vals)), np.nan)
         best_loss = np.inf
         best_cfg  = {}
+        total     = len(p1_vals) * len(p2_vals)
 
-        for i, v1 in enumerate(p1_vals):
-            for j, v2 in enumerate(p2_vals):
-                kwargs_copy = {**base_kwargs, p1_name: v1}
-                if p2_name and v2 is not None:
-                    kwargs_copy[p2_name] = v2
+        with tqdm(total=total, desc=f"{name} sensitivity sweep", leave=False) as pbar:
+            for i, v1 in enumerate(p1_vals):
+                for j, v2 in enumerate(p2_vals):
+                    kwargs_copy = {**base_kwargs, p1_name: v1}
+                    if p2_name and v2 is not None:
+                        kwargs_copy[p2_name] = v2
 
-                runner     = OptimizerRunner(opt_fn, kwargs_copy)
-                out        = runner.run(X, y, w0, config["n_iters"])
-                loss = out["final_loss"]
+                    runner = OptimizerRunner(
+                        opt_fn,
+                        kwargs_copy,
+                        loss_fn=config.get("loss_func"),
+                        grad_fn=config.get("gradient_func")
+                    )
+                    out  = runner.run(X, y, w0, config["n_iters"])
+                    loss = out["final_loss"]
+                    pbar.update(1)
 
-                if np.isnan(loss) or np.isinf(loss):
-                    grid[i, j] = np.nan
-                    continue
+                    if np.isnan(loss) or np.isinf(loss):
+                        grid[i, j] = np.nan
+                        continue
 
-                grid[i, j] = loss
+                    grid[i, j] = loss
 
-                if loss < best_loss:
-                    best_loss = loss
-                    best_cfg  = {p1_name: v1, **(
-                        {p2_name: v2} if p2_name else {}
-                    )}
+                    if loss < best_loss:
+                        best_loss = loss
+                        best_cfg  = {p1_name: v1, **(
+                            {p2_name: v2} if p2_name else {}
+                        )}
 
         if best_loss == np.inf:
             best_loss = None

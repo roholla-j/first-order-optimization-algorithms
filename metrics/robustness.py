@@ -15,13 +15,15 @@ import numpy as np
 from utils.runner import OptimizerRunner
 
 
-def _run_seeds(opt_fn, opt_kwargs, X, y, w0_base_seed, n_seeds, n_iters):
+def _run_seeds(opt_fn, opt_kwargs, X, y, w0_base_seed, n_seeds, n_iters, loss_func=None, gradient_func=None):
     """Vary w0 seed, keep data fixed."""
     final_losses = []
     for seed in range(n_seeds):
         rng = np.random.default_rng(seed + w0_base_seed)
         w0  = rng.standard_normal(X.shape[1]) * 0.01
-        out = OptimizerRunner(opt_fn, opt_kwargs).run(X, y, w0, n_iters)
+        out = OptimizerRunner(
+            opt_fn, opt_kwargs, loss_fn=loss_func, grad_fn=gradient_func
+        ).run(X, y, w0, n_iters)
         loss = out["final_loss"]
         if np.isnan(loss) or np.isinf(loss):
             continue
@@ -29,7 +31,7 @@ def _run_seeds(opt_fn, opt_kwargs, X, y, w0_base_seed, n_seeds, n_iters):
     return final_losses
 
 
-def _run_noise(opt_fn, opt_kwargs, X, y, w0_seed, noise_levels, n_iters):
+def _run_noise(opt_fn, opt_kwargs, X, y, w0_seed, noise_levels, n_iters, loss_func=None, gradient_func=None):
     """Fix w0, sweep noise levels."""
     rng = np.random.default_rng(w0_seed)
     w0  = rng.standard_normal(X.shape[1]) * 0.01
@@ -38,7 +40,9 @@ def _run_noise(opt_fn, opt_kwargs, X, y, w0_seed, noise_levels, n_iters):
     results = {}
     for std in noise_levels:
         X_noisy = X + noise_rng.normal(0, std, X.shape) if std > 0 else X
-        out = OptimizerRunner(opt_fn, opt_kwargs).run(X_noisy, y, w0, n_iters)
+        out = OptimizerRunner(
+            opt_fn, opt_kwargs, loss_fn=loss_func, grad_fn=gradient_func
+        ).run(X_noisy, y, w0, n_iters)
         loss = out["final_loss"]
         results[std] = None if (np.isnan(loss) or np.isinf(loss)) else loss
     return results
@@ -72,7 +76,11 @@ def run(optimizers: dict, X, y, config: dict) -> dict:
 
     for name, (opt_fn, opt_kwargs) in optimizers.items():
         # 1. Init robustness
-        final_losses = _run_seeds(opt_fn, opt_kwargs, X, y, w0_seed, n_seeds, n_iters)
+        final_losses = _run_seeds(
+            opt_fn, opt_kwargs, X, y, w0_seed, n_seeds, n_iters,
+            loss_func=config.get("loss_func"),
+            gradient_func=config.get("gradient_func")
+        )
 
         if len(final_losses) == 0:
             results[name] = {
@@ -91,8 +99,11 @@ def run(optimizers: dict, X, y, config: dict) -> dict:
         success_rate = len(final_losses) / n_seeds
 
         # 2. Noise robustness
-        noise_results = _run_noise(opt_fn, opt_kwargs, X, y, w0_seed,
-                                   noise_levels, n_iters)
+        noise_results = _run_noise(
+            opt_fn, opt_kwargs, X, y, w0_seed, noise_levels, n_iters,
+            loss_func=config.get("loss_func"),
+            gradient_func=config.get("gradient_func")
+        )
 
         baseline = noise_results.get(0)
         degradation = {

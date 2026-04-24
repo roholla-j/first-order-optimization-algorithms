@@ -29,17 +29,31 @@ def nag(start_w, x, y,
     path_history = [w.copy()]
 
     for _ in range(steps):
+        # Divergence guard: pad with NaN so diverged runs end cleanly in plots
+        if not np.all(np.isfinite(w)):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
+
         # Record loss at current position
         current_loss = loss_func(w, x, y)
+        if not np.isfinite(current_loss):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
         loss_history.append(current_loss)
 
-        # Lookahead position: w_t - gamma * v_{t-1}
+        # Lookahead position: w_t - beta * v_{t-1}
         lookahead_w = w - beta * v
+        if not np.all(np.isfinite(lookahead_w)):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
 
         # Gradient evaluated at lookahead position
         grad = gradient_func(lookahead_w, x, y)
+        if not np.all(np.isfinite(grad)):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
 
-        # Update velocity (matches: v_t = gamma v_{t-1} + lr * grad_at_lookahead)
+        # Update velocity (v_t = beta * v_{t-1} + lr * grad_at_lookahead)
         v = beta * v + lr * grad
 
         # Update parameters
