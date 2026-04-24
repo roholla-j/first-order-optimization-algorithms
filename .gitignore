@@ -1,0 +1,3 @@
+*.pyc
+.vscode/settings.json
+data/rcv1_train.binary
