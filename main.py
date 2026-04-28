@@ -62,12 +62,12 @@ def main():
             X, y = load_data("data/rcv1_train.binary")
             loss_func, gradient_func = logistic_loss, logistic_gradient
             title_prefix = "Logistic (RCV1)"
-            n_iters = 200
+            n_iters = 500
         elif dataset_choice == "3":
             loss_func, gradient_func = rosenbrock, rosenbrock_gradient
-            w0 = np.array([-1.0, 1.0])
+            w0 = np.array([-1, 1])
             title_prefix = "Rosenbrock"
-            n_iters = 4000
+            n_iters = 700
         elif dataset_choice == "4":
             loss_func, gradient_func = quadratic_loss, quadratic_gradient
             w0 = np.array([3.0, 4.0])
@@ -118,7 +118,7 @@ def main():
         }
 
         if alg_name == "GD":
-            config["learning_rates"] = [1e-3, 5e-3, 0.01, 0.1, 0.5, 1.0, 2.0] if dataset_choice in ["1","2"] else [1e-5, 1e-4, 5e-4, 1e-3]
+            config["learning_rates"] = [0.1, 1, 3.7, 10, 11, 20] if dataset_choice in ["1","2"] else [0.0001, 0.002, 0.00205, 0.0023, 0.00236, 0.003, 0.004, 0.5]
             results = lr_comparison.run({"GD": OPTIMIZERS["GD"]}, X, y, config)
 
             if dataset_choice in ["3", "4"]:
@@ -144,7 +144,7 @@ def main():
             # Cap epochs for large datasets (RCV1 ~20K samples — full sweep is slow)
             max_epochs = 50 if N > 10_000 else n_iters
             config["n_epochs"] = max_epochs
-            config["learning_rates"] = [1e-3, 0.01, 0.1]
+            config["learning_rates"] = [1e-3, 0.01, 0.1, 1, 2]
             # For very large N, skip batch_size=1 and start from N//100
             if N > 10_000:
                 config["batch_sizes"] = [max(1, N // 100), max(1, N // 10), max(1, N // 2), N]
@@ -162,24 +162,24 @@ def main():
             # ----------------------------------------------------------------
             if alg_name == "Adam":
                 # LR sweep: fixed beta1 and beta2
-                LR_VALS        = [1e-3, 0.01, 0.1, 0.9]  if is_logistic else [1e-4, 5e-4, 1e-3]
+                LR_VALS        = [0.01, 1, 3, 4]  if is_logistic else [1e-3, 0.01, 0.1, 0.2, 0.3]
                 FIXED_BETA1_LR = 0.9
                 FIXED_BETA2_LR = 0.999
                 # beta1 sweep: fixed lr and beta2
-                BETA1_VALS     = [0.5, 0.9, 0.99]
-                FIXED_LR_B1    = 0.01  if is_logistic else 5e-4
+                BETA1_VALS     = [0.8, 0.895, 0.9, 0.905, 0.999]
+                FIXED_LR_B1    = 3 if is_logistic else 0.2
                 FIXED_BETA2_B1 = 0.999
                 # beta2 sweep: fixed lr and beta1
-                BETA2_VALS     = [0.9, 0.99, 0.999]
-                FIXED_LR_B2    = 0.01  if is_logistic else 5e-4
+                BETA2_VALS     = [0.8, 0.999, 0.9991, 0.9993]
+                FIXED_LR_B2    = 3  if is_logistic else 0.2
                 FIXED_BETA1_B2 = 0.9
             else:  # Momentum / NAG
                 # LR sweep: fixed beta
-                LR_VALS       = [1e-3, 0.01, 0.1, 0.9]  if is_logistic else [1e-4, 5e-4, 1e-3]
-                FIXED_BETA_LR = 0.9
+                LR_VALS       = [1e-3, 0.1, 1, 2, 3, 4]  if is_logistic else [1e-5, 1e-4, 3e-4, 5e-4, 9e-4]
+                FIXED_BETA_LR = 0.98
                 # beta sweep: fixed lr
-                BETA_VALS     = [0.5, 0.9, 0.99]
-                FIXED_LR_BETA = 0.1    if is_logistic else 5e-4
+                BETA_VALS     = [0.9, 0.975, 0.98, 0.985]
+                FIXED_LR_BETA = 2    if is_logistic else 3e-4
 
             # ----------------------------------------------------------------
             # Run sweeps
@@ -205,13 +205,13 @@ def main():
                 # Sensitivity heatmap (lr × beta grid)
                 print(f"  Running sensitivity sweep...")
                 if is_logistic:
-                    lr_grid = [1e-4, 1e-3, 5e-3, 0.01, 0.05, 0.1, 0.5]
+                    lr_grid = [ 1e-3, 0.1, 0.5, 1, 2, 3, 4]
                 else:
-                    lr_grid = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3]
+                    lr_grid = [1e-5, 1e-4, 3e-4, 6e-4, 1e-3]
                 sens_cfg = config.copy()
                 sens_cfg["param_grid"] = {
                     "lr":   lr_grid,
-                    "beta": [0.5, 0.7, 0.9, 0.95, 0.99]
+                    "beta": [0.9, 0.975, 0.98, 0.985, 0.99, 0.999]
                 }
                 sens_results = sensitivity.run({alg_name: OPTIMIZERS[alg_name]}, X, y, sens_cfg)
 
@@ -281,10 +281,10 @@ def main():
         elif alg_name == "Compare All":
             # Optimal params (rough estimates for comparison)
             best_optimizers = {
-                "GD": (gd, {"lr": 0.1 if dataset_choice in ["1", "2"] else 1e-3}),
-                "Momentum": (momentum, {"lr": 0.05 if dataset_choice in ["1", "2"] else 1e-3, "beta": 0.9}),
-                "NAG": (nag, {"lr": 0.05 if dataset_choice in ["1", "2"] else 1e-3, "beta": 0.9}),
-                "Adam": (adam, {"lr": 0.01 if dataset_choice in ["1", "2"] else 1e-2, "beta1": 0.9, "beta2": 0.999})
+                "GD": (gd, {"lr": 3.7 if dataset_choice in ["1", "2"] else 0.002}),
+                "Momentum": (momentum, {"lr": 4 if dataset_choice in ["1", "2"] else 0.001, "beta": 0.98}),
+                "NAG": (nag, {"lr": 2 if dataset_choice in ["1", "2"] else 0.0003, "beta": 0.98}),
+                "Adam": (adam, {"lr": 3 if dataset_choice in ["1", "2"] else 0.2, "beta1": 0.9, "beta2": 0.999})
             }
 
             N = X.shape[0] if X is not None and len(X.shape) > 0 and dataset_choice in ["1", "2"] else 1
