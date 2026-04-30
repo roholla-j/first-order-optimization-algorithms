@@ -10,10 +10,11 @@ from optimizers.adam import adam
 
 from losses.logistic import logistic_loss, logistic_gradient
 from utils.plotting import make_axes_grid, plot_sensitivity_heatmap
+from utils.config import get as cfg
 from metrics import lr_comparison, sgd_comparison, param_sweep, sensitivity
 
 
-def run(alg_name, title_prefix, X, y, n_iters, OPTIMIZERS):
+def run(alg_name, title_prefix, X, y, n_iters, OPTIMIZERS, dataset_key):
     loss_func, gradient_func = logistic_loss, logistic_gradient
     config = {
         "n_iters": n_iters,
@@ -23,97 +24,87 @@ def run(alg_name, title_prefix, X, y, n_iters, OPTIMIZERS):
     }
 
     if alg_name == "GD":
-        _run_gd(title_prefix, X, y, config, OPTIMIZERS)
+        _run_gd(title_prefix, X, y, config, OPTIMIZERS, dataset_key)
 
     elif alg_name == "SGD":
-        _run_sgd(title_prefix, X, y, n_iters, config, OPTIMIZERS)
+        _run_sgd(title_prefix, X, y, n_iters, config, OPTIMIZERS, dataset_key)
 
     elif alg_name in ["Momentum", "NAG", "Adam"]:
         opt_fn, base_kwargs = OPTIMIZERS[alg_name]
-        _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config)
+        _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config, dataset_key)
 
     elif alg_name == "Compare All":
-        _run_compare_all(title_prefix, X, y, n_iters, loss_func, gradient_func)
+        _run_compare_all(title_prefix, X, y, n_iters, loss_func, gradient_func, dataset_key)
 
 
-def _run_gd(title_prefix, X, y, config, OPTIMIZERS):
-    config = {**config, "learning_rates": [2, 4, 8, 12]}
+def _run_gd(title_prefix, X, y, config, OPTIMIZERS, dataset_key):
+    c = cfg()[dataset_key]["gd"]
+    config = {**config, "learning_rates": c["learning_rates"]}
     results = lr_comparison.run({"GD": OPTIMIZERS["GD"]}, X, y, config)
     lr_comparison.plot(results, title=f"GD - Learning Rate Comparison ({title_prefix})")
 
 
-def _run_sgd(title_prefix, X, y, n_iters, config, OPTIMIZERS):
+def _run_sgd(title_prefix, X, y, n_iters, config, OPTIMIZERS, dataset_key):
+    c = cfg()[dataset_key]["sgd"]
     N = X.shape[0]
-    max_epochs = 50 if N > 10_000 else n_iters
-    if N > 10_000:
+    large = N > c["large_n_threshold"]
+    max_epochs = c["n_epochs_large"] if large else n_iters
+    if large:
         batch_sizes = [max(1, N // 100), max(1, N // 10), max(1, N // 2), N]
     else:
         batch_sizes = [1, max(1, N // 10), max(1, N // 2), N]
     config = {**config,
               "n_epochs": max_epochs,
-              "learning_rates": [1e-3, 0.01, 0.1],
+              "learning_rates": c["learning_rates"],
               "batch_sizes": batch_sizes}
     results = sgd_comparison.run({"SGD": OPTIMIZERS["SGD"]}, X, y, config)
     sgd_comparison.plot_by_batch_size(results, title=f"SGD — LR per Batch Size ({title_prefix})")
 
 
-def _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config):
-    if alg_name == "Adam":
-        LR_VALS        = [1e-3, 0.01, 0.1, 0.9]
-        FIXED_BETA1_LR = 0.9
-        FIXED_BETA2_LR = 0.999
-        BETA1_VALS     = [0.5, 0.9, 0.99]
-        FIXED_LR_B1    = 0.01
-        FIXED_BETA2_B1 = 0.999
-        BETA2_VALS     = [0.9, 0.99, 0.999]
-        FIXED_LR_B2    = 0.01
-        FIXED_BETA1_B2 = 0.9
+def _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config, dataset_key):
+    c = cfg()[dataset_key][alg_name.lower()]
 
+    if alg_name == "Adam":
         print("  Running lr sweep...")
         lr_res = param_sweep.run(
-            opt_fn, {**base_kwargs, "beta1": FIXED_BETA1_LR, "beta2": FIXED_BETA2_LR},
-            "lr", LR_VALS, X, y, config)
+            opt_fn, {**base_kwargs, "beta1": c["fixed_beta1_for_lr"], "beta2": c["fixed_beta2_for_lr"]},
+            "lr", c["lr_sweep"], X, y, config)
         print("  Running beta1 sweep...")
         beta1_res = param_sweep.run(
-            opt_fn, {**base_kwargs, "lr": FIXED_LR_B1, "beta2": FIXED_BETA2_B1},
-            "beta1", BETA1_VALS, X, y, config)
+            opt_fn, {**base_kwargs, "lr": c["fixed_lr_for_beta1"], "beta2": c["fixed_beta2_for_beta1"]},
+            "beta1", c["beta1_sweep"], X, y, config)
         print("  Running beta2 sweep...")
         beta2_res = param_sweep.run(
-            opt_fn, {**base_kwargs, "lr": FIXED_LR_B2, "beta1": FIXED_BETA1_B2},
-            "beta2", BETA2_VALS, X, y, config)
+            opt_fn, {**base_kwargs, "lr": c["fixed_lr_for_beta2"], "beta1": c["fixed_beta1_for_beta2"]},
+            "beta2", c["beta2_sweep"], X, y, config)
 
-        fig, axes = make_axes_grid(3)
-        param_sweep.plot(lr_res,    "lr",    f"beta1={FIXED_BETA1_LR}, beta2={FIXED_BETA2_LR}",
+        _, axes = make_axes_grid(3)
+        param_sweep.plot(lr_res,    "lr",    f"beta1={c['fixed_beta1_for_lr']}, beta2={c['fixed_beta2_for_lr']}",
                          title=f"Adam — LR sweep ({title_prefix})",    ax=axes[0])
-        param_sweep.plot(beta1_res, "beta1", f"lr={FIXED_LR_B1}, beta2={FIXED_BETA2_B1}",
+        param_sweep.plot(beta1_res, "beta1", f"lr={c['fixed_lr_for_beta1']}, beta2={c['fixed_beta2_for_beta1']}",
                          title=f"Adam — beta1 sweep ({title_prefix})", ax=axes[1])
-        param_sweep.plot(beta2_res, "beta2", f"lr={FIXED_LR_B2}, beta1={FIXED_BETA1_B2}",
+        param_sweep.plot(beta2_res, "beta2", f"lr={c['fixed_lr_for_beta2']}, beta1={c['fixed_beta1_for_beta2']}",
                          title=f"Adam — beta2 sweep ({title_prefix})", ax=axes[2])
 
     else:  # Momentum / NAG
-        LR_VALS       = [1e-3, 0.01, 0.1, 0.9]
-        FIXED_BETA_LR = 0.9
-        BETA_VALS     = [0.5, 0.9, 0.99]
-        FIXED_LR_BETA = 0.1
-
         print("  Running lr sweep...")
         lr_res = param_sweep.run(
-            opt_fn, {**base_kwargs, "beta": FIXED_BETA_LR},
-            "lr", LR_VALS, X, y, config)
+            opt_fn, {**base_kwargs, "beta": c["fixed_beta_for_lr"]},
+            "lr", c["lr_sweep"], X, y, config)
         print("  Running beta sweep...")
         beta_res = param_sweep.run(
-            opt_fn, {**base_kwargs, "lr": FIXED_LR_BETA},
-            "beta", BETA_VALS, X, y, config)
+            opt_fn, {**base_kwargs, "lr": c["fixed_lr_for_beta"]},
+            "beta", c["beta_sweep"], X, y, config)
 
         print("  Running sensitivity sweep...")
         sens_cfg = {**config, "param_grid": {
-            "lr":   [1e-4, 1e-3, 5e-3, 0.01, 0.05, 0.1, 0.5],
-            "beta": [0.5, 0.7, 0.9, 0.95, 0.99],
+            "lr":   c["sensitivity_lr_grid"],
+            "beta": c["sensitivity_beta_grid"],
         }}
         sens_results = sensitivity.run({alg_name: (opt_fn, base_kwargs)}, X, y, sens_cfg)
 
-        fig, axes = make_axes_grid(3)
-        param_sweep.plot(lr_res, "lr", f"beta={FIXED_BETA_LR}",
+        _, axes = make_axes_grid(3)
+        param_sweep.plot(lr_res, "lr", f"beta={c['fixed_beta_for_lr']}",
                          title=f"{alg_name} — LR sweep ({title_prefix})", ax=axes[0])
 
         sens_data = sens_results[alg_name]
@@ -123,24 +114,25 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config):
             title=f"lr × beta Sensitivity — {alg_name} ({title_prefix})", ax=axes[1]
         )
 
-        param_sweep.plot(beta_res, "beta", f"lr={FIXED_LR_BETA}",
+        param_sweep.plot(beta_res, "beta", f"lr={c['fixed_lr_for_beta']}",
                          title=f"{alg_name} — beta sweep ({title_prefix})", ax=axes[2])
 
     plt.tight_layout()
     plt.show()
 
 
-def _run_compare_all(title_prefix, X, y, n_iters, loss_func, gradient_func):
+def _run_compare_all(title_prefix, X, y, n_iters, loss_func, gradient_func, dataset_key):
+    c = cfg()[dataset_key]["compare_all"]
     N = X.shape[0]
     bs = max(1, N // 10)
     steps_per_epoch = max(1, N // bs)
 
     best_optimizers = {
-        "GD":       (gd,       {"lr": 0.1}),
-        "SGD":      (sgd,      {"lr": 0.1, "batch_size": bs}),
-        "Momentum": (momentum, {"lr": 0.05, "beta": 0.9}),
-        "NAG":      (nag,      {"lr": 0.05, "beta": 0.9}),
-        "Adam":     (adam,     {"lr": 0.01, "beta1": 0.9, "beta2": 0.999}),
+        "GD":       (gd,       {"lr": c["gd"]["lr"]}),
+        "SGD":      (sgd,      {"lr": c["sgd"]["lr"], "batch_size": bs}),
+        "Momentum": (momentum, {"lr": c["momentum"]["lr"], "beta": c["momentum"]["beta"]}),
+        "NAG":      (nag,      {"lr": c["nag"]["lr"], "beta": c["nag"]["beta"]}),
+        "Adam":     (adam,     {"lr": c["adam"]["lr"], "beta1": c["adam"]["beta1"], "beta2": c["adam"]["beta2"]}),
     }
 
     rng = np.random.default_rng(0)

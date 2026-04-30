@@ -5,7 +5,7 @@ from optimizers.nag import nag
 from optimizers.adam import adam
 
 from utils.data import load_data
-from sklearn.datasets import load_svmlight_file
+from utils.config import get as cfg
 from tests import logistic, rosenbrock, quadratic
 
 OPTIMIZERS = {
@@ -46,22 +46,25 @@ def main():
         if dataset_choice == "q":
             break
 
+        c = cfg()
         if dataset_choice == "1":
-            #X, y = load_svmlight_file("data/australian_scale.txt")
-            X, y = load_data("data/australian_scale.txt")
+            dataset_key = "logistic_australian"
+            X, y = load_data(c[dataset_key]["path"])
             title_prefix = "Logistic (Australian)"
-            n_iters = 200
+            n_iters = c[dataset_key]["n_iters"]
         elif dataset_choice == "2":
-            #X, y = load_svmlight_file("data/australian_scale.txt")
-            X, y = load_data("data/rcv1_train.binary")
+            dataset_key = "logistic_rcv1"
+            X, y = load_data(c[dataset_key]["path"])
             title_prefix = "Logistic (RCV1)"
-            n_iters = 100
+            n_iters = c[dataset_key]["n_iters"]
         elif dataset_choice == "3":
+            dataset_key = "rosenbrock"
             title_prefix = "Rosenbrock"
-            n_iters = 2000
+            n_iters = c[dataset_key]["n_iters"]
         elif dataset_choice == "4":
+            dataset_key = "quadratic"
             title_prefix = "Quadratic Bowl"
-            n_iters = 100
+            n_iters = c[dataset_key]["n_iters"]
         else:
             print("Invalid choice.")
             continue
@@ -92,7 +95,7 @@ def main():
         print(f"\nRunning {alg_name} on {title_prefix}...\n")
 
         if dataset_choice in ["1", "2"]:
-            logistic.run(alg_name, title_prefix, X, y, n_iters, OPTIMIZERS)
+            logistic.run(alg_name, title_prefix, X, y, n_iters, OPTIMIZERS, dataset_key)
         elif dataset_choice == "3":
             rosenbrock.run(alg_name, n_iters, OPTIMIZERS)
         else:

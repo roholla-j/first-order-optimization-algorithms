@@ -1,0 +1,243 @@
+# ============================================================
+#  Experiment parameters — all algorithm + function combos
+# ============================================================
+#
+#  Structure:
+#    [<dataset>]            — dataset-level settings
+#    [<dataset>.<alg>]      — sweep params for that alg on that dataset
+#    [<dataset>.compare_all.<alg>]  — best config used in "Compare All"
+#
+#  Datasets:  logistic_australian | logistic_rcv1 | quadratic | rosenbrock
+#  Algs:      gd | sgd | momentum | nag | adam
+# ============================================================
+
+
+# ── Logistic Regression — Australian ────────────────────────
+
+[logistic_australian]
+path    = "data/australian_scale.txt"
+n_iters = 200
+
+[logistic_australian.gd]
+learning_rates = [0.01, 0.1, 1, 4, 10]
+
+[logistic_australian.sgd]
+learning_rates    = [1.0e-3, 0.01, 0.1]
+large_n_threshold = 10000   # datasets larger than this use n_epochs_large
+n_epochs_large    = 50
+
+[logistic_australian.momentum]
+lr_sweep              = [1.0e-3, 0.01, 0.1, 0.9]
+fixed_beta_for_lr     = 0.9
+beta_sweep            = [0.5, 0.9, 0.99]
+fixed_lr_for_beta     = 0.1
+sensitivity_lr_grid   = [1.0e-4, 1.0e-3, 5.0e-3, 0.01, 0.05, 0.1, 0.5]
+sensitivity_beta_grid = [0.5, 0.7, 0.9, 0.95, 0.99]
+
+[logistic_australian.nag]
+lr_sweep              = [1.0e-3, 0.01, 0.1, 0.9]
+fixed_beta_for_lr     = 0.9
+beta_sweep            = [0.5, 0.9, 0.99]
+fixed_lr_for_beta     = 0.1
+sensitivity_lr_grid   = [1.0e-4, 1.0e-3, 5.0e-3, 0.01, 0.05, 0.1, 0.5]
+sensitivity_beta_grid = [0.5, 0.7, 0.9, 0.95, 0.99]
+
+[logistic_australian.adam]
+lr_sweep              = [1.0e-3, 0.01, 0.1, 0.9]
+fixed_beta1_for_lr    = 0.9
+fixed_beta2_for_lr    = 0.999
+beta1_sweep           = [0.5, 0.9, 0.99]
+fixed_lr_for_beta1    = 0.01
+fixed_beta2_for_beta1 = 0.999
+beta2_sweep           = [0.9, 0.99, 0.999]
+fixed_lr_for_beta2    = 0.01
+fixed_beta1_for_beta2 = 0.9
+
+[logistic_australian.compare_all.gd]
+lr = 0.1
+
+[logistic_australian.compare_all.sgd]
+lr = 0.1   # batch_size is auto-computed as N // 10
+
+[logistic_australian.compare_all.momentum]
+lr   = 0.05
+beta = 0.9
+
+[logistic_australian.compare_all.nag]
+lr   = 0.05
+beta = 0.9
+
+[logistic_australian.compare_all.adam]
+lr    = 0.01
+beta1 = 0.9
+beta2 = 0.999
+
+
+# ── Logistic Regression — RCV1 ──────────────────────────────
+
+[logistic_rcv1]
+path    = "data/rcv1_train.binary"
+n_iters = 100
+
+[logistic_rcv1.gd]
+learning_rates = [2.0, 4.0, 8.0, 12.0]
+
+[logistic_rcv1.sgd]
+learning_rates    = [1.0e-3, 0.01, 0.1]
+large_n_threshold = 10000
+n_epochs_large    = 50
+
+[logistic_rcv1.momentum]
+lr_sweep              = [1.0e-3, 0.01, 0.1, 0.9]
+fixed_beta_for_lr     = 0.9
+beta_sweep            = [0.5, 0.9, 0.99]
+fixed_lr_for_beta     = 0.1
+sensitivity_lr_grid   = [1.0e-4, 1.0e-3, 5.0e-3, 0.01, 0.05, 0.1, 0.5]
+sensitivity_beta_grid = [0.5, 0.7, 0.9, 0.95, 0.99]
+
+[logistic_rcv1.nag]
+lr_sweep              = [1.0e-3, 0.01, 0.1, 0.9]
+fixed_beta_for_lr     = 0.9
+beta_sweep            = [0.5, 0.9, 0.99]
+fixed_lr_for_beta     = 0.1
+sensitivity_lr_grid   = [1.0e-4, 1.0e-3, 5.0e-3, 0.01, 0.05, 0.1, 0.5]
+sensitivity_beta_grid = [0.5, 0.7, 0.9, 0.95, 0.99]
+
+[logistic_rcv1.adam]
+lr_sweep              = [1.0e-3, 0.01, 0.1, 0.9]
+fixed_beta1_for_lr    = 0.9
+fixed_beta2_for_lr    = 0.999
+beta1_sweep           = [0.5, 0.9, 0.99]
+fixed_lr_for_beta1    = 0.01
+fixed_beta2_for_beta1 = 0.999
+beta2_sweep           = [0.9, 0.99, 0.999]
+fixed_lr_for_beta2    = 0.01
+fixed_beta1_for_beta2 = 0.9
+
+[logistic_rcv1.compare_all.gd]
+lr = 0.1
+
+[logistic_rcv1.compare_all.sgd]
+lr = 0.1
+
+[logistic_rcv1.compare_all.momentum]
+lr   = 0.05
+beta = 0.9
+
+[logistic_rcv1.compare_all.nag]
+lr   = 0.05
+beta = 0.9
+
+[logistic_rcv1.compare_all.adam]
+lr    = 0.01
+beta1 = 0.9
+beta2 = 0.999
+
+
+# ── Quadratic Bowl ──────────────────────────────────────────
+
+[quadratic]
+n_iters = 100
+w0      = [3.0, 4.0]
+A       = [[3.0, 1.0], [1.0, 2.0]]
+b       = [2.0, 5.0]
+
+[quadratic.gd]
+learning_rates = [1.0e-5, 1.0e-4, 5.0e-4, 1.0e-2]
+
+[quadratic.momentum]
+lr_sweep              = [1.0e-4, 5.0e-4, 1.0e-3]
+fixed_beta_for_lr     = 0.9
+beta_sweep            = [0.5, 0.9, 0.99]
+fixed_lr_for_beta     = 5.0e-4
+sensitivity_lr_grid   = [1.0e-5, 5.0e-5, 1.0e-4, 5.0e-4, 1.0e-3]
+sensitivity_beta_grid = [0.5, 0.7, 0.9, 0.95, 0.99]
+
+[quadratic.nag]
+lr_sweep              = [1.0e-4, 5.0e-4, 1.0e-3]
+fixed_beta_for_lr     = 0.9
+beta_sweep            = [0.5, 0.9, 0.99]
+fixed_lr_for_beta     = 5.0e-4
+sensitivity_lr_grid   = [1.0e-5, 5.0e-5, 1.0e-4, 5.0e-4, 1.0e-3]
+sensitivity_beta_grid = [0.5, 0.7, 0.9, 0.95, 0.99]
+
+[quadratic.adam]
+lr_sweep              = [1.0e-4, 5.0e-4, 1.0e-3]
+fixed_beta1_for_lr    = 0.9
+fixed_beta2_for_lr    = 0.999
+beta1_sweep           = [0.5, 0.9, 0.99]
+fixed_lr_for_beta1    = 5.0e-4
+fixed_beta2_for_beta1 = 0.999
+beta2_sweep           = [0.9, 0.99, 0.999]
+fixed_lr_for_beta2    = 5.0e-4
+fixed_beta1_for_beta2 = 0.9
+
+[quadratic.compare_all.gd]
+lr = 1.0e-3
+
+[quadratic.compare_all.momentum]
+lr   = 1.0e-3
+beta = 0.9
+
+[quadratic.compare_all.nag]
+lr   = 1.0e-3
+beta = 0.9
+
+[quadratic.compare_all.adam]
+lr    = 1.0e-2
+beta1 = 0.9
+beta2 = 0.999
+
+
+# ── Rosenbrock ──────────────────────────────────────────────
+
+[rosenbrock]
+n_iters               = 2000
+w0                    = [-1.0, 1.0]
+convergence_threshold = 1.0e-6
+
+[rosenbrock.gd]
+learning_rates = [1.0e-5, 1.0e-4, 5.0e-4, 1.0e-3]
+
+[rosenbrock.momentum]
+lr_sweep              = [1.0e-4, 5.0e-4, 1.0e-3]
+fixed_beta_for_lr     = 0.9
+beta_sweep            = [0.5, 0.9, 0.99]
+fixed_lr_for_beta     = 5.0e-4
+sensitivity_lr_grid   = [1.0e-5, 5.0e-5, 1.0e-4, 5.0e-4, 1.0e-3]
+sensitivity_beta_grid = [0.5, 0.7, 0.9, 0.95, 0.99]
+
+[rosenbrock.nag]
+lr_sweep              = [1.0e-4, 5.0e-4, 1.0e-3]
+fixed_beta_for_lr     = 0.9
+beta_sweep            = [0.5, 0.9, 0.99]
+fixed_lr_for_beta     = 5.0e-4
+sensitivity_lr_grid   = [1.0e-5, 5.0e-5, 1.0e-4, 5.0e-4, 1.0e-3]
+sensitivity_beta_grid = [0.5, 0.7, 0.9, 0.95, 0.99]
+
+[rosenbrock.adam]
+lr_sweep              = [1.0e-4, 5.0e-4, 1.0e-3]
+fixed_beta1_for_lr    = 0.9
+fixed_beta2_for_lr    = 0.999
+beta1_sweep           = [0.5, 0.9, 0.99]
+fixed_lr_for_beta1    = 5.0e-4
+fixed_beta2_for_beta1 = 0.999
+beta2_sweep           = [0.9, 0.99, 0.999]
+fixed_lr_for_beta2    = 5.0e-4
+fixed_beta1_for_beta2 = 0.9
+
+[rosenbrock.compare_all.gd]
+lr = 1.0e-3
+
+[rosenbrock.compare_all.momentum]
+lr   = 1.0e-3
+beta = 0.9
+
+[rosenbrock.compare_all.nag]
+lr   = 1.0e-3
+beta = 0.9
+
+[rosenbrock.compare_all.adam]
+lr    = 1.0e-2
+beta1 = 0.9
+beta2 = 0.999
