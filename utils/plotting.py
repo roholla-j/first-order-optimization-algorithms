@@ -145,6 +145,12 @@ def plot_sensitivity_heatmap(grid, row_vals, col_vals,
     ax_to_plot.set_ylabel(row_label)
     ax_to_plot.set_title(title, fontsize=11, fontweight="bold")
 
+    for i in range(len(row_vals)):
+        for j in range(len(col_vals)):
+            if not np.isfinite(grid[i, j]):
+                ax_to_plot.text(j, i, "div.", ha="center", va="center",
+                                fontsize=7, color="red", fontweight="bold")
+
     if grid.size <= 60 and len(finite) > 0:
         mid = (vmin + vmax) / 2
         for i in range(len(row_vals)):
@@ -269,13 +275,17 @@ def plot_quadratic_paths(paths: dict, A, b, title="Quadratic Bowl trajectories",
         plt.show()
 
 
-def plot_distance_to_optimum(distances: dict, title="Distance to optimum", save_path=None):
-    _, ax = plt.subplots(figsize=(9, 5))
+def plot_distance_to_optimum(distances: dict, title="Distance to optimum",
+                             save_path=None, ax=None):
+    show = ax is None
+    if show:
+        _, ax = plt.subplots(figsize=(9, 5))
     for i, (name, dists) in enumerate(distances.items()):
         ax.semilogy(dists, label=name, linewidth=1.8, color=COLORS[i % len(COLORS)])
     _setup_ax(ax, title, "Iteration", "‖w − w*‖  (log scale)")
     ax.legend(framealpha=0.9)
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=150)
+    if show:
+        plt.tight_layout()
+        if save_path:
+            plt.savefig(save_path, dpi=150)
     plt.show()

@@ -4,7 +4,7 @@ import scipy.sparse as sp
 
 def load_data(path: str):
     X, y = load_svmlight_file(path)
-    y = np.where(y > 0, 1, -1)
+    # y = np.where(y > 0, 1, -1)
 
     # Add bias term as a sparse column
     ones = sp.csr_matrix(np.ones((X.shape[0], 1)))

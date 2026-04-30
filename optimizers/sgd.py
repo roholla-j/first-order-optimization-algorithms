@@ -37,7 +37,16 @@ def sgd(start_w, x, y,
         n = 1
     
     for step in range(steps):
-        loss_history.append(loss_func(w, x, y))
+        if not np.all(np.isfinite(w)):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
+
+        current_loss = loss_func(w, x, y)
+        if not np.isfinite(current_loss):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
+        loss_history.append(current_loss)
+
         # Sample a mini-batch (true SGD behavior)
         if n > 1:
             indices = np.random.choice(n, batch_size, replace=False)
@@ -47,12 +56,12 @@ def sgd(start_w, x, y,
             x_batch = x
             y_batch = y
 
-        # Compute gradient on the mini-batch
         grad = gradient_func(w, x_batch, y_batch)
-        
-        # SGD update: w ← w - η * ∇f_i(w)
+        if not np.all(np.isfinite(grad)):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
+
         w = w - lr * grad
-        
         path_history.append(w.copy())
     
     return w, loss_history, np.array(path_history)

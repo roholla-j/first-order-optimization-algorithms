@@ -36,8 +36,7 @@ def run(optimizers: dict, X, y, config: dict) -> dict:
     {name: {lr: {"losses": list[float]}}}
     — same inner structure for every algorithm, one entry per lr.
     """
-    rng            = np.random.default_rng(config.get("w0_seed", 0))
-    w0             = rng.standard_normal(X.shape[1]) if X is not None else config.get("w0")
+    w0             = np.zeros(X.shape[1]) if X is not None else config.get("w0")
     learning_rates = config["learning_rates"]
     n_iters        = config["n_iters"]
     loss_func      = config.get("loss_func", logistic_loss)

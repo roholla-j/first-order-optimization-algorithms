@@ -30,12 +30,7 @@ def gd(start_w, x, y,
             loss_history.extend([np.nan] * (steps - len(loss_history)))
             break
 
-        # Compute and record loss
-        current_loss = loss_func(w, x, y)
-        if not np.isfinite(current_loss):
-            loss_history.extend([np.nan] * (steps - len(loss_history)))
-            break
-        loss_history.append(current_loss)
+       
 
         # Compute gradient and update weights
         grad = gradient_func(w, x, y)
@@ -46,5 +41,12 @@ def gd(start_w, x, y,
 
         # Save path for visualization
         path_history.append(w.copy())
+         # Compute and record loss
+        current_loss = loss_func(w, x, y)
+        
+        if not np.isfinite(current_loss):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
+        loss_history.append(current_loss)
 
     return w, loss_history, np.array(path_history)

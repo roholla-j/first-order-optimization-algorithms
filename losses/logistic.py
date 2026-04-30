@@ -32,6 +32,8 @@ def logistic_gradient(w, X, y):
     # Calculate the scalar coefficients for each sample: -y_i / (1 + exp(y_i * w^T x_i))
     coefficients = -y / (1 + np.exp(margin))
 
+
+
     # Multiply features by coefficients and average over all N samples
     grad = (X.T @ coefficients) / N
     return grad

@@ -40,8 +40,7 @@ def run(optimizers: dict, X, y, config: dict) -> dict:
     losses has one value per epoch (full-data loss at each epoch boundary).
     """
     N              = X.shape[0] if X is not None else 1
-    rng            = np.random.default_rng(config.get("w0_seed", 0))
-    w0             = rng.standard_normal(X.shape[1]) if X is not None else config.get("w0")
+    w0             = np.zeros(X.shape[1]) if X is not None else config.get("w0")
     learning_rates = config["learning_rates"]
     batch_sizes    = config["batch_sizes"]
     n_epochs       = config["n_epochs"]
