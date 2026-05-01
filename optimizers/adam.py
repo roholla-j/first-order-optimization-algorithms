@@ -26,7 +26,6 @@ def adam(start_w, x, y,
     Returns:
         final_w, loss_history, path_history
     """
-
     w = start_w.copy()
 
     m = np.zeros_like(w)  # first moment
@@ -36,37 +35,31 @@ def adam(start_w, x, y,
     path_history = [w.copy()]
 
     for t in range(1, steps + 1):
-        # Divergence guard: pad with NaN so diverged runs end cleanly in plots
         if not np.all(np.isfinite(w)):
             loss_history.extend([np.nan] * (steps - len(loss_history)))
             break
 
-        # Compute loss
-        current_loss = loss_func(w, x, y)
-        if not np.isfinite(current_loss):
-            loss_history.extend([np.nan] * (steps - len(loss_history)))
-            break
-        loss_history.append(current_loss)
-
-        # Gradient
         g = gradient_func(w, x, y)
         if not np.all(np.isfinite(g)):
             loss_history.extend([np.nan] * (steps - len(loss_history)))
             break
 
-        # Update biased first moment estimate
+        # Update biased first and second moment estimates
         m = beta1 * m + (1 - beta1) * g
-
-        # Update biased second raw moment estimate
         v = beta2 * v + (1 - beta2) * (g ** 2)
 
         # Bias correction
         m_hat = m / (1 - beta1 ** t)
         v_hat = v / (1 - beta2 ** t)
 
-        # Parameter update
         w = w - lr * m_hat / (np.sqrt(v_hat) + eps)
 
         path_history.append(w.copy())
+
+        current_loss = loss_func(w, x, y)
+        if not np.isfinite(current_loss):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
+        loss_history.append(current_loss)
 
     return w, loss_history, np.array(path_history)

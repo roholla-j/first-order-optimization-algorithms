@@ -44,15 +44,19 @@ def _run_gd(title_prefix, X, y, config, OPTIMIZERS, dataset_key):
     lr_comparison.plot(results, title=f"GD - Learning Rate Comparison ({title_prefix})")
 
 
+def _floor_pow2(n):
+    return max(1, 1 << (n.bit_length() - 1))
+
+
 def _run_sgd(title_prefix, X, y, n_iters, config, OPTIMIZERS, dataset_key):
     c = cfg()[dataset_key]["sgd"]
     N = X.shape[0]
     large = N > c["large_n_threshold"]
     max_epochs = c["n_epochs_large"] if large else n_iters
     if large:
-        batch_sizes = [max(1, N // 100), max(1, N // 10), max(1, N // 2), N]
+        batch_sizes = [_floor_pow2(max(1, N // 100)), _floor_pow2(max(1, N // 10)), _floor_pow2(max(1, N // 2))]
     else:
-        batch_sizes = [1, max(1, N // 10), max(1, N // 2), N]
+        batch_sizes = [1, 32, _floor_pow2(max(1, N // 10)), _floor_pow2(max(1, N // 2))]
     config = {**config,
               "n_epochs": max_epochs,
               "learning_rates": c["learning_rates"],
@@ -124,7 +128,7 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config, dat
 def _run_compare_all(title_prefix, X, y, n_iters, loss_func, gradient_func, dataset_key):
     c = cfg()[dataset_key]["compare_all"]
     N = X.shape[0]
-    bs = max(1, N // 10)
+    bs = c["sgd"]["batch_size"]
     steps_per_epoch = max(1, N // bs)
 
     best_optimizers = {
