@@ -7,7 +7,7 @@ def load_data(path: str):
     # y = np.where(y > 0, 1, -1)
 
     # Add bias term as a sparse column
-    ones = sp.csr_matrix(np.ones((X.shape[0], 1)))
-    X = sp.hstack([X, ones]).tocsr()
+    #ones = sp.csr_matrix(np.ones((X.shape[0], 1)))
+    #X = sp.hstack([X, ones]).tocsr()
 
     return X, y

@@ -147,7 +147,7 @@ def _run_compare_all(n_iters, loss_func, gradient_func, W0):
         compare_paths[name]     = path
         compare_distances[name] = distance_to_optimum(path)
 
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
+    fig1, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     for i, (name, losses) in enumerate(compare_losses.items()):
@@ -161,8 +161,11 @@ def _run_compare_all(n_iters, loss_func, gradient_func, W0):
 
     plot_rosenbrock_paths(compare_paths, title="Trajectories (Rosenbrock)", ax=ax2)
 
+    fig1.tight_layout()
+    plt.show()
+
+    fig2, ax3 = plt.subplots(figsize=(9, 6))
     plot_distance_to_optimum(compare_distances,
                              title="Distance to Optimum ‖w − w*‖  (Rosenbrock)", ax=ax3)
-
-    plt.tight_layout()
+    fig2.tight_layout()
     plt.show()

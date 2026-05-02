@@ -19,9 +19,10 @@ def rosenbrock(w, *args):
     -------
     float : scalar loss value
     """
-    return float(np.sum(
-        100.0 * (w[1:] - w[:-1] ** 2) ** 2 + (1 - w[:-1]) ** 2
-    ))
+    with np.errstate(over='ignore'):
+        return float(np.sum(
+            100.0 * (w[1:] - w[:-1] ** 2) ** 2 + (1 - w[:-1]) ** 2
+        ))
 
 
 def rosenbrock_gradient(w, *args):
@@ -44,11 +45,12 @@ def rosenbrock_gradient(w, *args):
     n    = len(w)
     grad = np.zeros(n)
 
-    # Interior contribution from being x_i (the "left" variable)
-    grad[:-1] += -400.0 * w[:-1] * (w[1:] - w[:-1] ** 2) - 2.0 * (1.0 - w[:-1])
+    with np.errstate(over='ignore'):
+        # Interior contribution from being x_i (the "left" variable)
+        grad[:-1] += -400.0 * w[:-1] * (w[1:] - w[:-1] ** 2) - 2.0 * (1.0 - w[:-1])
 
-    # Interior contribution from being x_{i+1} (the "right" variable)
-    grad[1:]  += 200.0 * (w[1:] - w[:-1] ** 2)
+        # Interior contribution from being x_{i+1} (the "right" variable)
+        grad[1:]  += 200.0 * (w[1:] - w[:-1] ** 2)
 
     return grad
 

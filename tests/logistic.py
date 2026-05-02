@@ -54,7 +54,7 @@ def _run_sgd(title_prefix, X, y, n_iters, config, OPTIMIZERS, dataset_key):
     large = N > c["large_n_threshold"]
     max_epochs = c["n_epochs_large"] if large else n_iters
     if large:
-        batch_sizes = [_floor_pow2(max(1, N // 100)), _floor_pow2(max(1, N // 10)), _floor_pow2(max(1, N // 2))]
+        batch_sizes = [_floor_pow2(max(1, N // 100)), 512, _floor_pow2(max(1, N // 10)), _floor_pow2(max(1, N // 2))]
     else:
         batch_sizes = [1, 32, _floor_pow2(max(1, N // 10)), _floor_pow2(max(1, N // 2))]
     config = {**config,

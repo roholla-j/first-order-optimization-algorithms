@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import expit
 
 def add_bias(X):
     """
@@ -29,8 +30,8 @@ def logistic_gradient(w, X, y):
     N = X.shape[0]
     margin = y * (X @ w)
 
-    # Calculate the scalar coefficients for each sample: -y_i / (1 + exp(y_i * w^T x_i))
-    coefficients = -y / (1 + np.exp(margin))
+    # expit(-margin) = 1/(1+exp(margin)), computed without overflow
+    coefficients = -y * expit(-margin)
 
 
 
