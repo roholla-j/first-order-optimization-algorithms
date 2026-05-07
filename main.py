@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="multiprocessing")
+
 from optimizers.gd import gd
 from optimizers.sgd import sgd
 from optimizers.momentum import momentum

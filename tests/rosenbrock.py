@@ -44,11 +44,14 @@ def _run_gd(config, OPTIMIZERS, W0):
     config = {**config, "learning_rates": c["learning_rates"]}
     results = lr_comparison.run({"GD": OPTIMIZERS["GD"]}, None, None, config)
 
-    _, axes = make_axes_grid(2)
+    _, axes = make_axes_grid(3)
     lr_comparison.plot(results, title=f"GD - Learning Rate Comparison ({TITLE})", ax=axes[0])
 
     paths = {f"lr={lr}": d["path"] for lr, d in results["GD"].items()}
     plot_rosenbrock_paths(paths, title="GD Trajectories (Rosenbrock)", ax=axes[1])
+
+    distances = {f"lr={lr}": distance_to_optimum(d["path"]) for lr, d in results["GD"].items()}
+    plot_distance_to_optimum(distances, title=f"GD — Distance to Optimum ({TITLE})", ax=axes[2])
 
     plt.tight_layout()
     plt.show()
@@ -71,7 +74,7 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, config, W0):
             opt_fn, {**base_kwargs, "lr": c["fixed_lr_for_beta2"], "beta1": c["fixed_beta1_for_beta2"]},
             "beta2", c["beta2_sweep"], None, None, config)
 
-        _, axes = make_axes_grid(4)
+        _, axes = make_axes_grid(5)
         param_sweep.plot(lr_res,    "lr",    f"beta1={c['fixed_beta1_for_lr']}, beta2={c['fixed_beta2_for_lr']}",
                          title=f"Adam — LR sweep ({TITLE})",    ax=axes[0])
         param_sweep.plot(beta1_res, "beta1", f"lr={c['fixed_lr_for_beta1']}, beta2={c['fixed_beta2_for_beta1']}",
@@ -81,6 +84,9 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, config, W0):
 
         paths = {f"lr={lr}": data["path"] for lr, data in lr_res.items()}
         plot_rosenbrock_paths(paths, title="Adam Trajectories (Rosenbrock)", ax=axes[3])
+
+        distances = {f"lr={val}": distance_to_optimum(data["path"]) for val, data in lr_res.items()}
+        plot_distance_to_optimum(distances, title=f"Adam — Distance to Optimum ({TITLE})", ax=axes[4])
 
     else:  # Momentum / NAG
         print("  Running lr sweep...")
@@ -99,7 +105,7 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, config, W0):
         }}
         sens_results = sensitivity.run({alg_name: (opt_fn, base_kwargs)}, None, None, sens_cfg)
 
-        _, axes = make_axes_grid(3)
+        _, axes = make_axes_grid(4)
         param_sweep.plot(lr_res, "lr", f"beta={c['fixed_beta_for_lr']}",
                          title=f"{alg_name} — LR sweep ({TITLE})", ax=axes[0])
 
@@ -112,6 +118,9 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, config, W0):
 
         param_sweep.plot(beta_res, "beta", f"lr={c['fixed_lr_for_beta']}",
                          title=f"{alg_name} — beta sweep ({TITLE})", ax=axes[2])
+
+        distances = {f"lr={val}": distance_to_optimum(data["path"]) for val, data in lr_res.items()}
+        plot_distance_to_optimum(distances, title=f"{alg_name} — Distance to Optimum ({TITLE})", ax=axes[3])
 
     plt.tight_layout()
     plt.show()
@@ -144,7 +153,7 @@ def _run_compare_all(n_iters, loss_func, gradient_func, W0):
         compare_paths[name]     = path
         compare_distances[name] = distance_to_optimum(path)
 
-    fig1, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    _, (ax1, ax2, ax3) = make_axes_grid(3)
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     for i, (name, losses) in enumerate(compare_losses.items()):
@@ -157,12 +166,8 @@ def _run_compare_all(n_iters, loss_func, gradient_func, W0):
     ax1.grid(True, alpha=0.3)
 
     plot_rosenbrock_paths(compare_paths, title="Trajectories (Rosenbrock)", ax=ax2)
-
-    fig1.tight_layout()
-    plt.show()
-
-    fig2, ax3 = plt.subplots(figsize=(9, 6))
     plot_distance_to_optimum(compare_distances,
                              title="Distance to Optimum ‖w − w*‖  (Rosenbrock)", ax=ax3)
-    fig2.tight_layout()
+
+    plt.tight_layout()
     plt.show()
