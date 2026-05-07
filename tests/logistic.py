@@ -107,6 +107,27 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config, dat
         }}
         sens_results = sensitivity.run({alg_name: (opt_fn, base_kwargs)}, X, y, sens_cfg)
 
+        if alg_name == "Momentum":
+            sgd_c = cfg()[dataset_key]["sgd"]
+            N = X.shape[0]
+            large = N > sgd_c["large_n_threshold"]
+            if large:
+                batch_sizes = [_floor_pow2(max(1, N // 100)), 512, _floor_pow2(max(1, N // 10)), _floor_pow2(max(1, N // 2))]
+            else:
+                batch_sizes = [16, 32, 64, 128]
+            batch_config = {
+                **config,
+                "learning_rates": c["lr_sweep"],
+                "batch_sizes": batch_sizes,
+                "n_epochs": config["n_iters"],
+            }
+            print("  Running batch-size comparison...")
+            batch_results = sgd_comparison.run(
+                {"Momentum": (opt_fn, {"beta": c["fixed_beta_for_lr"]})}, X, y, batch_config)
+            sgd_comparison.plot_by_batch_size(
+                batch_results,
+                title=f"Momentum — Batch Size Comparison  (beta={c['fixed_beta_for_lr']}, {title_prefix})")
+
         _, axes = make_axes_grid(3)
         param_sweep.plot(lr_res, "lr", f"beta={c['fixed_beta_for_lr']}",
                          title=f"{alg_name} — LR sweep ({title_prefix})", ax=axes[0])

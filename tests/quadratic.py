@@ -102,7 +102,7 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, config, W0, A, B):
         }}
         sens_results = sensitivity.run({alg_name: (opt_fn, base_kwargs)}, A, B, sens_cfg)
 
-        _, axes = make_axes_grid(4)
+        _, axes = make_axes_grid(3)
         param_sweep.plot(lr_res, "lr", f"beta={c['fixed_beta_for_lr']}",
                          title=f"{alg_name} — LR sweep ({TITLE})", ax=axes[0])
 
@@ -115,10 +115,6 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, config, W0, A, B):
 
         param_sweep.plot(beta_res, "beta", f"lr={c['fixed_lr_for_beta']}",
                          title=f"{alg_name} — beta sweep ({TITLE})", ax=axes[2])
-
-        paths = {f"lr={lr}": data["path"] for lr, data in lr_res.items()}
-        plot_quadratic_paths(paths, A=A, b=B,
-                             title=f"{alg_name} Trajectories (Quadratic Bowl)", ax=axes[3])
 
     plt.tight_layout()
     plt.show()

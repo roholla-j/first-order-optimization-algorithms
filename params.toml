@@ -194,7 +194,7 @@ beta2 = 0.999
 # ── Rosenbrock ──────────────────────────────────────────────
 
 [rosenbrock]
-n_iters               = 5000
+n_iters               = 2000
 w0                    = [-1.0, 1.0]
 convergence_threshold = 1.0e-6
 
