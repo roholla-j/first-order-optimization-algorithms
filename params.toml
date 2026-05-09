@@ -20,8 +20,8 @@ n_iters = 200
 
 [logistic_australian.gd]
 learning_rates     = [0.01, 0.1, 4, 5, 6]
-fixed_lr_for_batch = 4
-batch_sweep        = [64, 128, 256]
+fixed_lr_for_batch = 0.06
+batch_sweep        = [4, 16, 64]
 
 [logistic_australian.sgd]
 learning_rates    = [0.01, 0.1, 0.5, 1]
@@ -37,8 +37,8 @@ beta_sweep            = [0.5, 0.85, 0.99]
 fixed_lr_for_beta     = 1.5
 sensitivity_lr_grid   = [0.001, 0.01, 0.1, 1, 2, 4, 8]
 sensitivity_beta_grid = [0.5, 0.7, 0.8, 0.9, 0.99]
-fixed_lr_for_batch    = 1.5
-batch_sweep           = [32, 128, 256]
+fixed_lr_for_batch    = 0.1
+batch_sweep           = [16, 64, 256]
 
 [logistic_australian.nag]
 lr_sweep              = [0.01, 0.1, 2, 3]
@@ -47,8 +47,8 @@ beta_sweep            = [0.5, 0.8, 0.95, 0.99]
 fixed_lr_for_beta     = 2
 sensitivity_lr_grid   = [0.001, 0.01, 0.1, 1, 2, 4]
 sensitivity_beta_grid = [0.5, 0.7, 0.8, 0.9, 0.99, 0.999]
-fixed_lr_for_batch    = 2
-batch_sweep           = [1, 32, 128, 256]
+fixed_lr_for_batch    = 0.009
+batch_sweep           = [8, 32, 128]
 
 [logistic_australian.adam]
 lr_sweep              = [0.01, 0.5, 3]
@@ -60,32 +60,30 @@ fixed_beta2_for_beta1 = 0.999
 beta2_sweep           = [0.7, 0.999, 0.9999]
 fixed_lr_for_beta2    = 0.5
 fixed_beta1_for_beta2 = 0.85
-fixed_lr_for_batch    = 0.5
-batch_sweep           = [1, 32, 128, 256]
+fixed_lr_for_batch    = 0.008
+batch_sweep           = [4, 16, 64]
 
 [logistic_australian.compare_all.gd]
-lr         = 4
-batch_size = 64
+lr = 0.06
 
 [logistic_australian.compare_all.sgd]
 lr         = 0.5
 batch_size = 64
 
 [logistic_australian.compare_all.momentum]
-lr         = 1.5
-beta       = 0.85
-batch_size = 64
+lr   = 0.1
+beta = 0.85
 
 [logistic_australian.compare_all.nag]
-lr         = 2
-beta       = 0.95
-batch_size = 64
+lr   = 0.009
+beta = 0.95
 
 [logistic_australian.compare_all.adam]
-lr         = 0.5
-beta1      = 0.85
-beta2      = 0.999
-batch_size = 64
+lr    = 0.008
+beta1 = 0.85
+beta2 = 0.999
+
+
 
 
 # ── Logistic Regression — RCV1 ──────────────────────────────
@@ -140,28 +138,24 @@ fixed_lr_for_batch    = 10
 batch_sweep           = [512, 2048, 8192]
 
 [logistic_rcv1.compare_all.gd]
-lr         = 2048
-batch_size = 512
+lr = 2048
 
 [logistic_rcv1.compare_all.sgd]
 lr         = 2048
 batch_size = 512
 
 [logistic_rcv1.compare_all.momentum]
-lr         = 2048
-beta       = 0.95
-batch_size = 8192
+lr   = 2048
+beta = 0.95
 
 [logistic_rcv1.compare_all.nag]
-lr         = 2048
-beta       = 0.95
-batch_size = 8192
+lr   = 2048
+beta = 0.95
 
 [logistic_rcv1.compare_all.adam]
-lr         = 10
-beta1      = 0.9
-beta2      = 0.99
-batch_size = 8192
+lr    = 10
+beta1 = 0.9
+beta2 = 0.99
 
 
 # ── Quadratic Bowl ──────────────────────────────────────────

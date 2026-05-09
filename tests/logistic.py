@@ -181,13 +181,15 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config, dat
 def _run_compare_all(title_prefix, X, y, n_iters, loss_func, gradient_func, dataset_key):
     c = cfg()[dataset_key]["compare_all"]
     N = X.shape[0]
+    bs = c["sgd"]["batch_size"]
+    steps_per_epoch = max(1, N // bs)
 
     best_optimizers = {
-        "GD":       (gd,       {"lr": c["gd"]["lr"],       "batch_size": c["gd"]["batch_size"]}),
-        "SGD":      (sgd,      {"lr": c["sgd"]["lr"],      "batch_size": c["sgd"]["batch_size"]}),
-        "Momentum": (momentum, {"lr": c["momentum"]["lr"], "beta":  c["momentum"]["beta"],  "batch_size": c["momentum"]["batch_size"]}),
-        "NAG":      (nag,      {"lr": c["nag"]["lr"],      "beta":  c["nag"]["beta"],       "batch_size": c["nag"]["batch_size"]}),
-        "Adam":     (adam,     {"lr": c["adam"]["lr"],     "beta1": c["adam"]["beta1"],     "beta2": c["adam"]["beta2"], "batch_size": c["adam"]["batch_size"]}),
+        "GD":       (gd,       {"lr": c["gd"]["lr"]}),
+        "SGD":      (sgd,      {"lr": c["sgd"]["lr"], "batch_size": bs}),
+        "Momentum": (momentum, {"lr": c["momentum"]["lr"], "beta": c["momentum"]["beta"]}),
+        "NAG":      (nag,      {"lr": c["nag"]["lr"],      "beta": c["nag"]["beta"]}),
+        "Adam":     (adam,     {"lr": c["adam"]["lr"], "beta1": c["adam"]["beta1"], "beta2": c["adam"]["beta2"]}),
     }
 
     rng = np.random.default_rng(0)
@@ -197,17 +199,18 @@ def _run_compare_all(title_prefix, X, y, n_iters, loss_func, gradient_func, data
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     for i, (name, (opt_fn, kwargs)) in enumerate(tqdm(best_optimizers.items(), desc="Algorithms")):
-        spe = max(1, N // kwargs["batch_size"])
+        actual_steps = n_iters * steps_per_epoch if name == "SGD" else n_iters
         _, losses, _ = opt_fn(
             start_w=w0_init,
             x=X,
             y=y,
             loss_func=loss_func,
             gradient_func=gradient_func,
-            steps=n_iters * spe,
+            steps=actual_steps,
             **kwargs,
         )
-        losses = losses[::spe][:n_iters]
+        if name == "SGD":
+            losses = losses[::steps_per_epoch][:n_iters]
         ax1.plot(losses, label=f"{name} (Final Loss: {losses[-1]:.6f})",
                  color=colors[i % len(colors)], linewidth=2)
 
