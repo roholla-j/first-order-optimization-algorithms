@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -8,11 +9,17 @@ from optimizers.nag import nag
 from optimizers.adam import adam
 
 from losses.quadratic import quadratic_loss, quadratic_gradient
-from utils.plotting import make_axes_grid, plot_sensitivity_heatmap, plot_quadratic_paths
+from utils.plotting import plots_dir, plot_sensitivity_heatmap, plot_quadratic_paths
 from utils.config import get as cfg
 from metrics import lr_comparison, param_sweep, sensitivity
 
 TITLE = "Quadratic Bowl"
+_PREFIX = "quadratic"
+
+
+def _save(fig, path):
+    fig.savefig(path)
+    print(f"  Saved: {path}")
 
 
 def _load_params():
@@ -46,19 +53,26 @@ def _run_gd(config, OPTIMIZERS, W0, A, B):
     c = cfg()["quadratic"]["gd"]
     config = {**config, "learning_rates": c["learning_rates"]}
     results = lr_comparison.run({"GD": OPTIMIZERS["GD"]}, A, B, config)
+    d = plots_dir()
 
-    _, axes = make_axes_grid(2)
-    lr_comparison.plot(results, title=f"GD - Learning Rate Comparison ({TITLE})", ax=axes[0])
-
-    paths = {f"lr={lr}": d["path"] for lr, d in results["GD"].items()}
-    plot_quadratic_paths(paths, A=A, b=B, title="GD Trajectories (Quadratic Bowl)", ax=axes[1])
-
+    fig, ax = plt.subplots(figsize=(10, 5))
+    lr_comparison.plot(results, title=f"GD - Learning Rate Comparison ({TITLE})", ax=ax)
     plt.tight_layout()
+    _save(fig, os.path.join(d, f"{_PREFIX}_gd_lr_comparison.pdf"))
+
+    fig, ax = plt.subplots(figsize=(9, 7))
+    paths = {f"lr={lr}": d_["path"] for lr, d_ in results["GD"].items()}
+    plot_quadratic_paths(paths, A=A, b=B, title="GD Trajectories (Quadratic Bowl)", ax=ax)
+    plt.tight_layout()
+    _save(fig, os.path.join(d, f"{_PREFIX}_gd_trajectories.pdf"))
+
     plt.show()
 
 
 def _run_advanced(alg_name, opt_fn, base_kwargs, config, W0, A, B):
     c = cfg()["quadratic"][alg_name.lower()]
+    alg = alg_name.lower()
+    d = plots_dir()
 
     if alg_name == "Adam":
         print("  Running lr sweep...")
@@ -74,16 +88,29 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, config, W0, A, B):
             opt_fn, {**base_kwargs, "lr": c["fixed_lr_for_beta2"], "beta1": c["fixed_beta1_for_beta2"]},
             "beta2", c["beta2_sweep"], A, B, config)
 
-        _, axes = make_axes_grid(4)
-        param_sweep.plot(lr_res,    "lr",    f"beta1={c['fixed_beta1_for_lr']}, beta2={c['fixed_beta2_for_lr']}",
-                         title=f"Adam — LR sweep ({TITLE})",    ax=axes[0])
-        param_sweep.plot(beta1_res, "beta1", f"lr={c['fixed_lr_for_beta1']}, beta2={c['fixed_beta2_for_beta1']}",
-                         title=f"Adam — beta1 sweep ({TITLE})", ax=axes[1])
-        param_sweep.plot(beta2_res, "beta2", f"lr={c['fixed_lr_for_beta2']}, beta1={c['fixed_beta1_for_beta2']}",
-                         title=f"Adam — beta2 sweep ({TITLE})", ax=axes[2])
+        fig, ax = plt.subplots(figsize=(10, 5))
+        param_sweep.plot(lr_res, "lr", f"beta1={c['fixed_beta1_for_lr']}, beta2={c['fixed_beta2_for_lr']}",
+                         title=f"Adam — LR sweep ({TITLE})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{_PREFIX}_{alg}_lr_sweep.pdf"))
 
+        fig, ax = plt.subplots(figsize=(9, 5))
+        param_sweep.plot(beta1_res, "beta1", f"lr={c['fixed_lr_for_beta1']}, beta2={c['fixed_beta2_for_beta1']}",
+                         title=f"Adam — beta1 sweep ({TITLE})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{_PREFIX}_{alg}_beta1_sweep.pdf"))
+
+        fig, ax = plt.subplots(figsize=(9, 5))
+        param_sweep.plot(beta2_res, "beta2", f"lr={c['fixed_lr_for_beta2']}, beta1={c['fixed_beta1_for_beta2']}",
+                         title=f"Adam — beta2 sweep ({TITLE})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{_PREFIX}_{alg}_beta2_sweep.pdf"))
+
+        fig, ax = plt.subplots(figsize=(9, 7))
         paths = {f"lr={lr}": data["path"] for lr, data in lr_res.items()}
-        plot_quadratic_paths(paths, A=A, b=B, title="Adam Trajectories (Quadratic Bowl)", ax=axes[3])
+        plot_quadratic_paths(paths, A=A, b=B, title="Adam Trajectories (Quadratic Bowl)", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{_PREFIX}_{alg}_trajectories.pdf"))
 
     else:  # Momentum / NAG
         print("  Running lr sweep...")
@@ -102,21 +129,27 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, config, W0, A, B):
         }}
         sens_results = sensitivity.run({alg_name: (opt_fn, base_kwargs)}, A, B, sens_cfg)
 
-        _, axes = make_axes_grid(3)
+        fig, ax = plt.subplots(figsize=(10, 5))
         param_sweep.plot(lr_res, "lr", f"beta={c['fixed_beta_for_lr']}",
-                         title=f"{alg_name} — LR sweep ({TITLE})", ax=axes[0])
+                         title=f"{alg_name} — LR sweep ({TITLE})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{_PREFIX}_{alg}_lr_sweep.pdf"))
 
+        fig, ax = plt.subplots(figsize=(8, 6))
         sens_data = sens_results[alg_name]
         plot_sensitivity_heatmap(
             sens_data["grid"], sens_data["row_vals"], sens_data["col_vals"],
             row_label=sens_data["row_label"], col_label=sens_data["col_label"],
-            title=f"lr × beta Sensitivity — {alg_name} ({TITLE})", ax=axes[1]
-        )
+            title=f"lr × beta Sensitivity — {alg_name} ({TITLE})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{_PREFIX}_{alg}_sensitivity.pdf"))
 
+        fig, ax = plt.subplots(figsize=(9, 5))
         param_sweep.plot(beta_res, "beta", f"lr={c['fixed_lr_for_beta']}",
-                         title=f"{alg_name} — beta sweep ({TITLE})", ax=axes[2])
+                         title=f"{alg_name} — beta sweep ({TITLE})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{_PREFIX}_{alg}_beta_sweep.pdf"))
 
-    plt.tight_layout()
     plt.show()
 
 
@@ -129,10 +162,11 @@ def _run_compare_all(n_iters, loss_func, gradient_func, W0, A, B):
         "Adam":     (adam,     {"lr": c["adam"]["lr"], "beta1": c["adam"]["beta1"], "beta2": c["adam"]["beta2"]}),
     }
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     compare_paths = {}
+    d = plots_dir()
 
+    fig, ax = plt.subplots(figsize=(10, 6))
     for i, (name, (opt_fn, kwargs)) in enumerate(tqdm(best_optimizers.items(), desc="Algorithms")):
         _, losses, path = opt_fn(
             start_w=W0,
@@ -143,18 +177,22 @@ def _run_compare_all(n_iters, loss_func, gradient_func, W0, A, B):
             steps=n_iters,
             **kwargs,
         )
-        ax1.plot(losses, label=f"{name} (Final Loss: {losses[-1]:.6f})",
-                 color=colors[i % len(colors)], linewidth=2)
+        ax.plot(losses, label=f"{name} (Final Loss: {losses[-1]:.6f})",
+                color=colors[i % len(colors)], linewidth=2)
         compare_paths[name] = path
 
-    ax1.set_title(f"Algorithm Comparison ({TITLE})", fontsize=14, fontweight="bold")
-    ax1.set_xlabel("Iterations", fontsize=12)
-    ax1.set_ylabel("Loss", fontsize=12)
-    ax1.legend(framealpha=0.9)
-    ax1.grid(True, alpha=0.3)
-
-    plot_quadratic_paths(compare_paths, A=A, b=B,
-                         title="Algorithms Trajectories (Quadratic Bowl)", ax=ax2)
-
+    ax.set_title(f"Algorithm Comparison ({TITLE})", fontsize=14, fontweight="bold")
+    ax.set_xlabel("Iterations", fontsize=12)
+    ax.set_ylabel("Loss", fontsize=12)
+    ax.legend(framealpha=0.9)
+    ax.grid(True, alpha=0.3)
     plt.tight_layout()
+    _save(fig, os.path.join(d, f"{_PREFIX}_compare_all_loss.pdf"))
+
+    fig, ax = plt.subplots(figsize=(9, 7))
+    plot_quadratic_paths(compare_paths, A=A, b=B,
+                         title="Algorithms Trajectories (Quadratic Bowl)", ax=ax)
+    plt.tight_layout()
+    _save(fig, os.path.join(d, f"{_PREFIX}_compare_all_trajectories.pdf"))
+
     plt.show()

@@ -1,8 +1,16 @@
 import math
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
 COLORS = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+_PLOTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "plots")
+
+
+def plots_dir() -> str:
+    os.makedirs(_PLOTS_DIR, exist_ok=True)
+    return _PLOTS_DIR
 
 
 def _setup_ax(ax, title, xlabel, ylabel):

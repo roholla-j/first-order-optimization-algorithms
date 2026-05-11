@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -9,9 +10,18 @@ from optimizers.nag import nag
 from optimizers.adam import adam
 
 from losses.logistic import logistic_loss, logistic_gradient
-from utils.plotting import make_axes_grid, plot_sensitivity_heatmap
+from utils.plotting import plots_dir, plot_sensitivity_heatmap
 from utils.config import get as cfg
 from metrics import lr_comparison, sgd_comparison, param_sweep, sensitivity
+
+
+def _slug(s):
+    return s.lower().replace("(", "").replace(")", "").replace(" ", "_").strip("_")
+
+
+def _save(fig, path):
+    fig.savefig(path)
+    print(f"  Saved: {path}")
 
 
 def run(alg_name, title_prefix, X, y, n_iters, OPTIMIZERS, dataset_key):
@@ -53,12 +63,21 @@ def _run_gd(title_prefix, X, y, config, OPTIMIZERS, dataset_key):
     }
     batch_results = sgd_comparison.run({"GD": (opt_fn, base_kwargs)}, X, y, batch_config)
 
-    _, axes = make_axes_grid(2)
-    lr_comparison.plot(results, title=f"GD — Learning Rate Comparison ({title_prefix})", ax=axes[0])
+    slug = _slug(title_prefix)
+    d = plots_dir()
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    lr_comparison.plot(results, title=f"GD — Learning Rate Comparison ({title_prefix})", ax=ax)
+    plt.tight_layout()
+    _save(fig, os.path.join(d, f"{slug}_gd_lr_comparison.pdf"))
+
+    fig, ax = plt.subplots(figsize=(9, 5))
     sgd_comparison.plot_batch_sweep(
         batch_results, fixed_lr,
-        title=f"GD — Batch Size Sweep (lr={fixed_lr}, {title_prefix})", ax=axes[1])
+        title=f"GD — Batch Size Sweep (lr={fixed_lr}, {title_prefix})", ax=ax)
     plt.tight_layout()
+    _save(fig, os.path.join(d, f"{slug}_gd_batch_sweep.pdf"))
+
     plt.show()
 
 
@@ -80,11 +99,18 @@ def _run_sgd(title_prefix, X, y, n_iters, config, OPTIMIZERS, dataset_key):
               "learning_rates": c["learning_rates"],
               "batch_sizes": batch_sizes}
     results = sgd_comparison.run({"SGD": OPTIMIZERS["SGD"]}, X, y, config)
-    sgd_comparison.plot_by_batch_size(results, title=f"SGD — LR per Batch Size ({title_prefix})")
+
+    save_path = os.path.join(plots_dir(), f"{_slug(title_prefix)}_sgd_lr_per_batch_size.pdf")
+    sgd_comparison.plot_by_batch_size(
+        results, title=f"SGD — LR per Batch Size ({title_prefix})", save_path=save_path)
+    print(f"  Saved: {save_path}")
 
 
 def _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config, dataset_key):
     c = cfg()[dataset_key][alg_name.lower()]
+    slug = _slug(title_prefix)
+    alg = alg_name.lower()
+    d = plots_dir()
 
     if alg_name == "Adam":
         print("  Running lr sweep...")
@@ -114,17 +140,30 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config, dat
                                  "beta2": c["fixed_beta2_for_lr"]})},
             X, y, batch_config)
 
-        _, axes = make_axes_grid(4)
-        param_sweep.plot(lr_res,    "lr",    f"beta1={c['fixed_beta1_for_lr']}, beta2={c['fixed_beta2_for_lr']}",
-                         title=f"Adam — LR sweep ({title_prefix})",    ax=axes[0])
+        fig, ax = plt.subplots(figsize=(10, 5))
+        param_sweep.plot(lr_res, "lr", f"beta1={c['fixed_beta1_for_lr']}, beta2={c['fixed_beta2_for_lr']}",
+                         title=f"Adam — LR sweep ({title_prefix})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{slug}_{alg}_lr_sweep.pdf"))
+
+        fig, ax = plt.subplots(figsize=(9, 5))
         param_sweep.plot(beta1_res, "beta1", f"lr={c['fixed_lr_for_beta1']}, beta2={c['fixed_beta2_for_beta1']}",
-                         title=f"Adam — beta1 sweep ({title_prefix})", ax=axes[1])
+                         title=f"Adam — beta1 sweep ({title_prefix})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{slug}_{alg}_beta1_sweep.pdf"))
+
+        fig, ax = plt.subplots(figsize=(9, 5))
         param_sweep.plot(beta2_res, "beta2", f"lr={c['fixed_lr_for_beta2']}, beta1={c['fixed_beta1_for_beta2']}",
-                         title=f"Adam — beta2 sweep ({title_prefix})", ax=axes[2])
+                         title=f"Adam — beta2 sweep ({title_prefix})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{slug}_{alg}_beta2_sweep.pdf"))
+
+        fig, ax = plt.subplots(figsize=(9, 5))
         sgd_comparison.plot_batch_sweep(
             batch_results, fixed_lr_batch,
-            title=f"Adam — Batch Size Sweep (lr={fixed_lr_batch}, {title_prefix})",
-            ax=axes[3])
+            title=f"Adam — Batch Size Sweep (lr={fixed_lr_batch}, {title_prefix})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{slug}_{alg}_batch_sweep.pdf"))
 
     else:  # Momentum / NAG
         print("  Running lr sweep...")
@@ -155,26 +194,34 @@ def _run_advanced(alg_name, opt_fn, base_kwargs, title_prefix, X, y, config, dat
             {alg_name: (opt_fn, {**base_kwargs, "beta": c["fixed_beta_for_lr"]})},
             X, y, batch_config)
 
-        _, axes = make_axes_grid(4)
+        fig, ax = plt.subplots(figsize=(10, 5))
         param_sweep.plot(lr_res, "lr", f"beta={c['fixed_beta_for_lr']}",
-                         title=f"{alg_name} — LR sweep ({title_prefix})", ax=axes[0])
+                         title=f"{alg_name} — LR sweep ({title_prefix})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{slug}_{alg}_lr_sweep.pdf"))
 
+        fig, ax = plt.subplots(figsize=(8, 6))
         sens_data = sens_results[alg_name]
         plot_sensitivity_heatmap(
             sens_data["grid"], sens_data["row_vals"], sens_data["col_vals"],
             row_label=sens_data["row_label"], col_label=sens_data["col_label"],
-            title=f"lr × beta Sensitivity — {alg_name} ({title_prefix})", ax=axes[1]
-        )
+            title=f"lr × beta Sensitivity — {alg_name} ({title_prefix})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{slug}_{alg}_sensitivity.pdf"))
 
+        fig, ax = plt.subplots(figsize=(9, 5))
         param_sweep.plot(beta_res, "beta", f"lr={c['fixed_lr_for_beta']}",
-                         title=f"{alg_name} — beta sweep ({title_prefix})", ax=axes[2])
+                         title=f"{alg_name} — beta sweep ({title_prefix})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{slug}_{alg}_beta_sweep.pdf"))
 
+        fig, ax = plt.subplots(figsize=(9, 5))
         sgd_comparison.plot_batch_sweep(
             batch_results, fixed_lr_batch,
-            title=f"{alg_name} — Batch Size Sweep (lr={fixed_lr_batch}, {title_prefix})",
-            ax=axes[3])
+            title=f"{alg_name} — Batch Size Sweep (lr={fixed_lr_batch}, {title_prefix})", ax=ax)
+        plt.tight_layout()
+        _save(fig, os.path.join(d, f"{slug}_{alg}_batch_sweep.pdf"))
 
-    plt.tight_layout()
     plt.show()
 
 
@@ -194,10 +241,9 @@ def _run_compare_all(title_prefix, X, y, n_iters, loss_func, gradient_func, data
 
     rng = np.random.default_rng(0)
     w0_init = rng.standard_normal(X.shape[1])
-
-    fig, ax1 = plt.subplots(figsize=(10, 6))
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
+    fig, ax = plt.subplots(figsize=(10, 6))
     for i, (name, (opt_fn, kwargs)) in enumerate(tqdm(best_optimizers.items(), desc="Algorithms")):
         actual_steps = n_iters * steps_per_epoch if name == "SGD" else n_iters
         _, losses, _ = opt_fn(
@@ -211,13 +257,14 @@ def _run_compare_all(title_prefix, X, y, n_iters, loss_func, gradient_func, data
         )
         if name == "SGD":
             losses = losses[::steps_per_epoch][:n_iters]
-        ax1.plot(losses, label=f"{name} (Final Loss: {losses[-1]:.6f})",
-                 color=colors[i % len(colors)], linewidth=2)
+        ax.plot(losses, label=f"{name} (Final Loss: {losses[-1]:.6f})",
+                color=colors[i % len(colors)], linewidth=2)
 
-    ax1.set_title(f"Algorithm Comparison ({title_prefix})", fontsize=14, fontweight="bold")
-    ax1.set_xlabel("Epochs", fontsize=12)
-    ax1.set_ylabel("Loss", fontsize=12)
-    ax1.legend(framealpha=0.9)
-    ax1.grid(True, alpha=0.3)
+    ax.set_title(f"Algorithm Comparison ({title_prefix})", fontsize=14, fontweight="bold")
+    ax.set_xlabel("Epochs", fontsize=12)
+    ax.set_ylabel("Loss", fontsize=12)
+    ax.legend(framealpha=0.9)
+    ax.grid(True, alpha=0.3)
     plt.tight_layout()
+    _save(fig, os.path.join(plots_dir(), f"{_slug(title_prefix)}_compare_all.pdf"))
     plt.show()
