@@ -3,6 +3,21 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+plt.rcParams.update({
+    'font.size':              16,
+    'figure.titlesize':       14,
+    'axes.titlesize':         14,
+    'axes.labelsize':         16,
+    'xtick.labelsize':        13,
+    'ytick.labelsize':        13,
+    'legend.fontsize':        13,
+    'legend.title_fontsize':  14,
+    'lines.linewidth':         2.0,
+    'lines.markersize':        5.0,
+    'axes.linewidth':          0.8,
+    'grid.linewidth':          0.5,
+})
+
 COLORS = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
 _PLOTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "plots")
@@ -14,7 +29,7 @@ def plots_dir() -> str:
 
 
 def _setup_ax(ax, title, xlabel, ylabel):
-    ax.set_title(title, fontsize=11, fontweight="bold")
+    ax.set_title(title, fontweight="bold")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.grid(True, alpha=0.3)
@@ -53,7 +68,7 @@ def plot_robustness_boxplot(results: dict, title="Init robustness", save_path=No
         patch.set_facecolor(color)
         patch.set_alpha(0.7)
     ax.set_ylabel("Final loss")
-    ax.set_title(title, fontsize=11, fontweight="bold")
+    ax.set_title(title, fontweight="bold")
     ax.grid(True, alpha=0.3, axis="y")
     plt.tight_layout()
     if save_path:
@@ -93,7 +108,7 @@ def plot_robustness_dashboard(results: dict, title="Robustness", save_path=None)
         patch.set_alpha(0.7)
     ax.set_ylabel("Final loss")
     ax.set_title("Init robustness\n(final loss over 20 random starts)",
-                 fontsize=11, fontweight="bold")
+                 fontweight="bold")
     ax.grid(True, alpha=0.3, axis="y")
 
     ax = axes[1]
@@ -109,7 +124,7 @@ def plot_robustness_dashboard(results: dict, title="Robustness", save_path=None)
               "Noise std", "Final loss")
     ax.legend(framealpha=0.9)
 
-    plt.suptitle(title, fontsize=13, fontweight="bold")
+    plt.suptitle(title, fontweight="bold")
     plt.tight_layout()
     if save_path:
         plt.savefig(save_path, dpi=150)
@@ -151,13 +166,13 @@ def plot_sensitivity_heatmap(grid, row_vals, col_vals,
     ax_to_plot.set_yticklabels([f"{v:.3g}" for v in row_vals])
     ax_to_plot.set_xlabel(col_label)
     ax_to_plot.set_ylabel(row_label)
-    ax_to_plot.set_title(title, fontsize=11, fontweight="bold")
+    ax_to_plot.set_title(title, fontweight="bold")
 
     for i in range(len(row_vals)):
         for j in range(len(col_vals)):
             if not np.isfinite(grid[i, j]):
                 ax_to_plot.text(j, i, "div.", ha="center", va="center",
-                                fontsize=7, color="red", fontweight="bold")
+                                fontsize=12, color="red", fontweight="bold")
 
     if grid.size <= 60 and len(finite) > 0:
         mid = (vmin + vmax) / 2
@@ -167,7 +182,7 @@ def plot_sensitivity_heatmap(grid, row_vals, col_vals,
                 if np.isfinite(val):
                     txt_color = "white" if display_grid[i, j] > mid else "black"
                     ax_to_plot.text(j, i, f"{val:.3f}", ha="center", va="center",
-                            fontsize=7, color=txt_color)
+                            fontsize=12, color=txt_color)
 
     if show:
         plt.tight_layout()
@@ -226,7 +241,7 @@ def plot_rosenbrock_paths(paths: dict, title="Rosenbrock trajectories", save_pat
     ax_to_plot.plot(1, 1, "r*", markersize=15, label="optimum (1,1)", zorder=5)
     ax_to_plot.set_xlabel("x₁")
     ax_to_plot.set_ylabel("x₂")
-    ax_to_plot.set_title(title, fontsize=11, fontweight="bold")
+    ax_to_plot.set_title(title, fontweight="bold")
     ax_to_plot.legend(framealpha=0.9)
     if show:
         plt.tight_layout()
@@ -274,7 +289,7 @@ def plot_quadratic_paths(paths: dict, A, b, title="Quadratic Bowl trajectories",
     ax_to_plot.plot(*w_star, "r*", markersize=15, label="optimum (w*)", zorder=5)
     ax_to_plot.set_xlabel("w₁")
     ax_to_plot.set_ylabel("w₂")
-    ax_to_plot.set_title(title, fontsize=11, fontweight="bold")
+    ax_to_plot.set_title(title, fontweight="bold")
     ax_to_plot.legend(framealpha=0.9)
     if show:
         plt.tight_layout()
@@ -290,7 +305,7 @@ def plot_distance_to_optimum(distances: dict, title="Distance to optimum",
         _, ax = plt.subplots(figsize=(9, 5))
     for i, (name, dists) in enumerate(distances.items()):
         ax.semilogy(dists, label=name, linewidth=1.8, color=COLORS[i % len(COLORS)])
-    _setup_ax(ax, title, "Iteration", "‖w − w*‖  (log scale)")
+    _setup_ax(ax, title, "Iteration", r"$\|w - w^*\|$  (log scale)")
     ax.legend(framealpha=0.9)
     if show:
         plt.tight_layout()

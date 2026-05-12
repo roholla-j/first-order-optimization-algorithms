@@ -97,17 +97,17 @@ def plot(results: dict, title="SGD — lr × batch-size Comparison", save_path=N
                 ax_curr.plot(losses, label=label,
                         linewidth=1.8, color=color, linestyle=ls)
 
-        ax_curr.set_xlabel("Epoch", fontsize=12)
-        ax_curr.set_ylabel("Loss", fontsize=12)
-        ax_curr.set_title(name if show else title, fontsize=12, fontweight="bold")
-        ax_curr.legend(title="lr  ·  batch size", framealpha=0.9, fontsize=8)
+        ax_curr.set_xlabel("Epoch")
+        ax_curr.set_ylabel("Loss")
+        ax_curr.set_title(name if show else title, fontweight="bold")
+        ax_curr.legend(title="lr  ·  batch size", framealpha=0.9)
         ax_curr.grid(True, alpha=0.3)
 
     if show:
-        fig.suptitle(title, fontsize=13, fontweight="bold")
+        fig.suptitle(title, fontweight="bold")
         plt.tight_layout()
         if save_path:
-            plt.savefig(save_path, dpi=150)
+            plt.savefig(save_path, dpi=150, bbox_inches="tight")
         plt.show()
 
 
@@ -141,16 +141,16 @@ def plot_batch_sweep(results: dict, fixed_lr, title="Batch Size Sweep",
                 linestyle=_LINESTYLES[i % len(_LINESTYLES)],
                 linewidth=1.8)
 
-    ax.set_xlabel("Epoch", fontsize=12)
-    ax.set_ylabel("Loss", fontsize=12)
-    ax.set_title(title, fontsize=12, fontweight="bold")
-    ax.legend(title=f"lr = {fixed_lr}", framealpha=0.9, fontsize=9)
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Loss")
+    ax.set_title(title, fontweight="bold")
+    ax.legend(title=f"lr = {fixed_lr}", framealpha=0.9)
     ax.grid(True, alpha=0.3)
 
     if show:
         plt.tight_layout()
         if save_path:
-            plt.savefig(save_path, dpi=150)
+            plt.savefig(save_path, dpi=150, bbox_inches="tight")
         plt.show()
 
 
@@ -174,7 +174,7 @@ def plot_by_batch_size(results: dict, title="SGD — Batch Size Comparison", sav
     learning_rates = list(lr_dict.keys())
 
     n_bs = len(batch_sizes)
-    fig, axes = make_axes_grid(n_bs)
+    fig, axes = make_axes_grid(n_bs, w_per_plot=10, h_per_row=7.5)
 
     for ax, bs in zip(axes, batch_sizes):
         for i, lr in enumerate(learning_rates):
@@ -188,14 +188,14 @@ def plot_by_batch_size(results: dict, title="SGD — Batch Size Comparison", sav
                     linestyle=_LINESTYLES[i % len(_LINESTYLES)],
                     linewidth=1.8)
 
-        ax.set_title(f"Batch size = {bs}", fontsize=12, fontweight="bold")
-        ax.set_xlabel("Epoch", fontsize=12)
-        ax.set_ylabel("Loss", fontsize=12)
-        ax.legend(title="Learning rate", framealpha=0.9, fontsize=9)
+        ax.set_title(f"Batch size = {bs}", fontweight="bold")
+        ax.set_xlabel("Epoch")
+        ax.set_ylabel("Loss")
+        ax.legend(title="Learning rate", framealpha=0.9)
         ax.grid(True, alpha=0.3)
 
-    fig.suptitle(title, fontsize=13, fontweight="bold")
+    fig.suptitle(title, fontweight="bold")
     plt.tight_layout()
     if save_path:
-        plt.savefig(save_path, dpi=150)
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.show()

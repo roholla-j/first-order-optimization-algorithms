@@ -92,10 +92,10 @@ def plot(results, sweep_param, fixed_desc, title="", ax=None):
                 linestyle=_LINESTYLES[i % len(_LINESTYLES)],
                 linewidth=1.8)
 
-    ax.set_xlabel("Iteration", fontsize=12)
-    ax.set_ylabel("Loss", fontsize=12)
-    ax.set_title(title or f"{sweep_param} sweep", fontsize=12, fontweight="bold")
-    ax.legend(title=f"Fixed: {fixed_desc}", framealpha=0.9, fontsize=9)
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel("Loss")
+    ax.set_title(title or f"{sweep_param} sweep", fontweight="bold")
+    ax.legend(title=f"Fixed: {fixed_desc}", framealpha=0.9)
     ax.grid(True, alpha=0.3)
 
     if show:

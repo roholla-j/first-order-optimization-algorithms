@@ -90,13 +90,13 @@ def plot(results: dict, title="Momentum — lr × beta Comparison", save_path=No
                 ax.plot(data["losses"], label=label,
                         linewidth=1.8, color=color, linestyle=ls)
 
-        ax.set_xlabel("Iteration", fontsize=12)
-        ax.set_ylabel("Logistic Loss", fontsize=12)
-        ax.set_title(name, fontsize=12, fontweight="bold")
-        ax.legend(title="lr  ·  β", framealpha=0.9, fontsize=8)
+        ax.set_xlabel("Iteration")
+        ax.set_ylabel("Logistic Loss")
+        ax.set_title(name, fontweight="bold")
+        ax.legend(title="lr  ·  β", framealpha=0.9)
         ax.grid(True, alpha=0.3)
 
-    fig.suptitle(title, fontsize=13, fontweight="bold")
+    fig.suptitle(title, fontweight="bold")
     plt.tight_layout()
 
     if save_path:
