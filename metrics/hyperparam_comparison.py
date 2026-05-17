@@ -71,14 +71,14 @@ def plot(results: dict, config: dict, title="Hyperparameter Comparison", save_pa
                 label = f"{p1_name}={v1}, {p2_name}={v2} (Final: {final_str})"
                 ax_curr.plot(data["losses"], label=label, linewidth=1.8, color=color, linestyle=ls)
 
-        ax_curr.set_xlabel("Iteration", fontsize=12)
-        ax_curr.set_ylabel("Loss", fontsize=12)
-        ax_curr.set_title(name if show else title, fontsize=12, fontweight="bold")
-        ax_curr.legend(title=f"{p1_name} · {p2_name}", framealpha=0.9, fontsize=8)
+        ax_curr.set_xlabel("Iteration")
+        ax_curr.set_ylabel("Loss")
+        ax_curr.set_title(name if show else title, fontweight="bold")
+        ax_curr.legend(title=f"{p1_name} · {p2_name}", framealpha=0.9)
         ax_curr.grid(True, alpha=0.3)
 
     if show:
-        fig.suptitle(title, fontsize=13, fontweight="bold")
+        fig.suptitle(title, fontweight="bold")
         plt.tight_layout()
 
         if save_path:

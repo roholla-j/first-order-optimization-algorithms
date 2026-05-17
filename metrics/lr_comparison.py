@@ -36,8 +36,7 @@ def run(optimizers: dict, X, y, config: dict) -> dict:
     {name: {lr: {"losses": list[float]}}}
     — same inner structure for every algorithm, one entry per lr.
     """
-    rng            = np.random.default_rng(config.get("w0_seed", 0))
-    w0             = rng.standard_normal(X.shape[1]) if X is not None else config.get("w0")
+    w0             = np.zeros(X.shape[1]) if X is not None else config.get("w0")
     learning_rates = config["learning_rates"]
     n_iters        = config["n_iters"]
     loss_func      = config.get("loss_func", logistic_loss)
@@ -94,11 +93,11 @@ def plot(results: dict, title="Learning Rate Comparison", save_path=None, ax=Non
             ax_to_plot.plot(losses, label=label,
                     linewidth=1.8, color=color, linestyle=ls)
 
-    ax_to_plot.set_xlabel("Epoch / Iteration", fontsize=12)
-    ax_to_plot.set_ylabel("Loss", fontsize=12)
-    ax_to_plot.set_title(title, fontsize=12, fontweight="bold")
+    ax_to_plot.set_xlabel("Epoch / Iteration")
+    ax_to_plot.set_ylabel("Loss")
+    ax_to_plot.set_title(title, fontweight="bold")
     legend_title = "Algorithm  ·  learning rate" if len(results) > 1 else "Learning rate"
-    ax_to_plot.legend(title=legend_title, framealpha=0.9, fontsize=9)
+    ax_to_plot.legend(title=legend_title, framealpha=0.9)
     ax_to_plot.grid(True, alpha=0.3)
     
     if show:

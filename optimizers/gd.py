@@ -1,21 +1,26 @@
 
 import numpy as np
-def gd(start_w, x, y, 
-                     loss_func, 
-                     gradient_func, 
-                     lr=0.01, 
-                     steps=20):
+
+def gd(start_w, x, y,
+       loss_func,
+       gradient_func,
+       lr=0.01,
+       steps=20,
+       batch_size=None,
+       seed=42):
     """
     Generic Gradient Descent optimizer.
-    
+
     Parameters:
-        start_w : initial weights (numpy array)
-        x, y    : input data and targets
-        loss_func : function that computes the loss (signature: loss_func(w, x, y))
+        start_w    : initial weights (numpy array)
+        x, y       : input data and targets
+        loss_func  : function that computes the loss (signature: loss_func(w, x, y))
         gradient_func : function that computes the gradient (signature: gradient_func(w, x, y))
-        lr      : learning rate
-        steps   : number of optimization steps
-    
+        lr         : learning rate
+        steps      : number of optimization steps
+        batch_size : mini-batch size; None means full-batch
+        seed       : random seed for mini-batch sampling
+
     Returns:
         final_w, loss_history, path_history
     """
@@ -23,28 +28,32 @@ def gd(start_w, x, y,
     loss_history = []
     path_history = [w.copy()]
 
+    n = x.shape[0] if hasattr(x, "shape") else 1
+    if batch_size is not None:
+        np.random.seed(seed)
+
     for _ in range(steps):
-        # Divergence guard: if w blew up, stop and pad with NaN
-        # (NaN values are skipped by matplotlib, so the curve just ends cleanly)
         if not np.all(np.isfinite(w)):
             loss_history.extend([np.nan] * (steps - len(loss_history)))
             break
 
-        # Compute and record loss
-        current_loss = loss_func(w, x, y)
-        if not np.isfinite(current_loss):
-            loss_history.extend([np.nan] * (steps - len(loss_history)))
-            break
-        loss_history.append(current_loss)
+        if batch_size is not None and n > 1:
+            indices = np.random.choice(n, min(batch_size, n), replace=False)
+            x_batch, y_batch = x[indices], y[indices]
+        else:
+            x_batch, y_batch = x, y
 
-        # Compute gradient and update weights
-        grad = gradient_func(w, x, y)
+        grad = gradient_func(w, x_batch, y_batch)
         if not np.all(np.isfinite(grad)):
             loss_history.extend([np.nan] * (steps - len(loss_history)))
             break
         w = w - lr * grad
 
-        # Save path for visualization
         path_history.append(w.copy())
+        current_loss = loss_func(w, x, y)
+        if not np.isfinite(current_loss):
+            loss_history.extend([np.nan] * (steps - len(loss_history)))
+            break
+        loss_history.append(current_loss)
 
     return w, loss_history, np.array(path_history)

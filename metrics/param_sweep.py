@@ -37,8 +37,7 @@ def run(opt_fn, fixed_kwargs, sweep_param, sweep_vals, X, y, config):
     -------
     {val: {"losses": list, "path": np.ndarray}}
     """
-    rng  = np.random.default_rng(config.get("w0_seed", 0))
-    w0   = rng.standard_normal(X.shape[1]) if X is not None else config.get("w0")
+    w0   = np.zeros(X.shape[1]) if X is not None else config.get("w0")
     # if config.get("w0") is not None:
     #     w0 = config["w0"].copy()
     # else:
@@ -93,10 +92,10 @@ def plot(results, sweep_param, fixed_desc, title="", ax=None):
                 linestyle=_LINESTYLES[i % len(_LINESTYLES)],
                 linewidth=1.8)
 
-    ax.set_xlabel("Iteration", fontsize=12)
-    ax.set_ylabel("Loss", fontsize=12)
-    ax.set_title(title or f"{sweep_param} sweep", fontsize=12, fontweight="bold")
-    ax.legend(title=f"Fixed: {fixed_desc}", framealpha=0.9, fontsize=9)
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel("Loss")
+    ax.set_title(title or f"{sweep_param} sweep", fontweight="bold")
+    ax.legend(title=f"Fixed: {fixed_desc}", framealpha=0.9)
     ax.grid(True, alpha=0.3)
 
     if show:

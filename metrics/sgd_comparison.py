@@ -40,8 +40,7 @@ def run(optimizers: dict, X, y, config: dict) -> dict:
     losses has one value per epoch (full-data loss at each epoch boundary).
     """
     N              = X.shape[0] if X is not None else 1
-    rng            = np.random.default_rng(config.get("w0_seed", 0))
-    w0             = rng.standard_normal(X.shape[1]) if X is not None else config.get("w0")
+    w0             = np.zeros(X.shape[1]) if X is not None else config.get("w0")
     learning_rates = config["learning_rates"]
     batch_sizes    = config["batch_sizes"]
     n_epochs       = config["n_epochs"]
@@ -98,17 +97,60 @@ def plot(results: dict, title="SGD — lr × batch-size Comparison", save_path=N
                 ax_curr.plot(losses, label=label,
                         linewidth=1.8, color=color, linestyle=ls)
 
-        ax_curr.set_xlabel("Epoch", fontsize=12)
-        ax_curr.set_ylabel("Loss", fontsize=12)
-        ax_curr.set_title(name if show else title, fontsize=12, fontweight="bold")
-        ax_curr.legend(title="lr  ·  batch size", framealpha=0.9, fontsize=8)
+        ax_curr.set_xlabel("Epoch")
+        ax_curr.set_ylabel("Loss")
+        ax_curr.set_title(name if show else title, fontweight="bold")
+        ax_curr.legend(title="lr  ·  batch size", framealpha=0.9)
         ax_curr.grid(True, alpha=0.3)
 
     if show:
-        fig.suptitle(title, fontsize=13, fontweight="bold")
+        fig.suptitle(title, fontweight="bold")
         plt.tight_layout()
         if save_path:
-            plt.savefig(save_path, dpi=150)
+            plt.savefig(save_path, dpi=150, bbox_inches="tight")
+        plt.show()
+
+
+def plot_batch_sweep(results: dict, fixed_lr, title="Batch Size Sweep",
+                     save_path=None, ax=None):
+    """
+    Single plot: one curve per batch size at a fixed learning rate.
+    Y-axis: Loss, X-axis: Epoch.
+
+    Parameters
+    ----------
+    results   : return value of run() — {alg: {lr: {bs: {losses: [...]}}}}
+    fixed_lr  : the learning rate key to read from results
+    title     : plot title
+    """
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    show = ax is None
+    if show:
+        fig, ax = plt.subplots(figsize=(9, 5))
+
+    name = next(iter(results))
+    bs_dict = results[name][fixed_lr]
+
+    for i, (bs, data) in enumerate(bs_dict.items()):
+        losses = data["losses"]
+        finite = [v for v in losses if np.isfinite(v)]
+        final_str = f"{finite[-1]:.4g}" if finite else "diverged"
+        label = f"batch_size={bs}  (Final: {final_str})"
+        ax.plot(losses, label=label,
+                color=colors[i % len(colors)],
+                linestyle=_LINESTYLES[i % len(_LINESTYLES)],
+                linewidth=1.8)
+
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Loss")
+    ax.set_title(title, fontweight="bold")
+    ax.legend(title=f"lr = {fixed_lr}", framealpha=0.9)
+    ax.grid(True, alpha=0.3)
+
+    if show:
+        plt.tight_layout()
+        if save_path:
+            plt.savefig(save_path, dpi=150, bbox_inches="tight")
         plt.show()
 
 
@@ -132,7 +174,7 @@ def plot_by_batch_size(results: dict, title="SGD — Batch Size Comparison", sav
     learning_rates = list(lr_dict.keys())
 
     n_bs = len(batch_sizes)
-    fig, axes = make_axes_grid(n_bs)
+    fig, axes = make_axes_grid(n_bs, w_per_plot=10, h_per_row=7.5)
 
     for ax, bs in zip(axes, batch_sizes):
         for i, lr in enumerate(learning_rates):
@@ -146,14 +188,14 @@ def plot_by_batch_size(results: dict, title="SGD — Batch Size Comparison", sav
                     linestyle=_LINESTYLES[i % len(_LINESTYLES)],
                     linewidth=1.8)
 
-        ax.set_title(f"Batch size = {bs}", fontsize=12, fontweight="bold")
-        ax.set_xlabel("Epoch", fontsize=12)
-        ax.set_ylabel("Loss", fontsize=12)
-        ax.legend(title="Learning rate", framealpha=0.9, fontsize=9)
+        ax.set_title(f"Batch size = {bs}", fontweight="bold")
+        ax.set_xlabel("Epoch")
+        ax.set_ylabel("Loss")
+        ax.legend(title="Learning rate", framealpha=0.9)
         ax.grid(True, alpha=0.3)
 
-    fig.suptitle(title, fontsize=13, fontweight="bold")
+    fig.suptitle(title, fontweight="bold")
     plt.tight_layout()
     if save_path:
-        plt.savefig(save_path, dpi=150)
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.show()
